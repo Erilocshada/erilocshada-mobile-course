@@ -16,6 +16,8 @@ class MyApp extends StatelessWidget {
             SizedBox(height: 16),
             Text('Muhammad Pearl Ocshada', style: TextStyle(fontSize: 24)),
             Text('Pemrograman Mobile — Minggu 1'),
+            // Menambahkan widget Text untuk menampilkan NIM
+            Text('NIM: 244107020064', style: TextStyle(fontSize: 18)),
           ]),
         ),
       ),
