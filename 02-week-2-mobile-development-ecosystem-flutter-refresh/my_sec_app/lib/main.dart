@@ -41,7 +41,7 @@ class ProfileCard extends StatelessWidget {
                   children: const [
                     Text('Nama Mahasiswa',
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('...ketik nama Anda di sini...'),
+                    Text('...Muhammad Pearl Ocshada...'),
                   ],
                 ),
               ),
@@ -50,11 +50,11 @@ class ProfileCard extends StatelessWidget {
           const SizedBox(height: 12),
           const Row(children: [
             Expanded(child: Text('NIM')),
-            Text('...ketik NIM Anda di sini...'),
+            Text('...244107020064...'),
           ]),
           const Row(children: [
             Expanded(child: Text('Kelas')),
-            Text('...ketik kelas Anda di sini...'),
+            Text('...TI-3C...'),
           ]),
         ],
       ),
