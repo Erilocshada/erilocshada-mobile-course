@@ -1,9 +1,9 @@
 Penjelasan Hasil Pengamatan Praktikum 1
 Hasil :
 
-![Screenshot Aplikasi](erilocshada-mobile-course/03-week-3-navigation/Screenshot/Praktikum1.1.png)
+![Screenshot Aplikasi](Screenshot/Praktikum1.1.png)
 
-![Screenshot Aplikasi](erilocshada-mobile-course/03-week-3-navigation/Screenshot/Praktikum1.2.png)
+![Screenshot Aplikasi](Screenshot/Praktikum1.2.png)
 
 Penjelasan :
 1. URL/path berubah otomatis mengikuti layar yang aktif
