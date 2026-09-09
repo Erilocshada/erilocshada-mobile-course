@@ -64,4 +64,43 @@ AsyncValue.guard otomatis menangkap exception dan mengubahnya menjadi AsyncError
 
 Hasil :
 
+<table>
+  <tr>
+    <td>
+      <img src="Screenshoot/Loading.png" width="400">
+    </td>
+    <td>
+      <img src="Screenshoot/AsyncValue.png" width="400">
+    </td>
+  </tr>
+</table>
+
+Penjelasan :
+1. Amati tampilan loading selama 2 detik pertama.
+
+Saat flutter run, provider di state AsyncLoading. UI menampilkan CircularProgressIndicator selama proses berlangsung. Setelah 2 detik, state berubah menjadi AsyncData, lalu UI success tampil.
+
+2. Mengamati Eror
+
+<table>
+  <tr>
+    <td>
+      <img src="Screenshoot/Eror.png" width="400">
+    </td>
+  </tr>
+</table>
+
+Penjelasan :
+
+Merubah build() menjadi :
+
+    @override
+    
+    Future<List<Todo>> build() async {
+    
+      throw Exception('Gagal terhubung ke server');
+      
+    }
+
+UI masuk ke state AsyncError dan menampilkan pesan eror dan button coba lagi.
 
