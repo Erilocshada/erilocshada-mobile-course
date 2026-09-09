@@ -39,3 +39,29 @@ Hasil :
 
 Penjelasan :
 ref.watch di dalam build membuat halaman otomatis ter-rebuild saat daftar berubah, ref.read(todoListProvider.notifier) di dalam callback hanya memanggil method tanpa berlangganan.
+
+3. Praktikum AsyncValue
+
+Hasil :
+
+<table>
+  <tr>
+    <td>
+      <img src="Screenshoot/AsyncValue.png" width="400">
+    </td>
+  </tr>
+</table>
+
+Penjelasan :
+
+AsyncValue
+
+Riverpod menyediakan AsyncValue<T> yang memodelkan ketiga kondisi tersebut dalam satu tipe. Gunakan AsyncNotifier untuk state asinkron.
+
+AsyncValue.guard otomatis menangkap exception dan mengubahnya menjadi AsyncError, hindari blok try/catch manual yang tersebar.
+
+4. Praktikum 3 - Uji Ketiga State
+
+Hasil :
+
+
