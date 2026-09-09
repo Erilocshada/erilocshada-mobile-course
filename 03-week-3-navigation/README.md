@@ -127,3 +127,10 @@ Tombol coba lagi menjalankan:
 
 ref.invalidate membuang state provider sebelumnya dan menjalankan ulang build(), setelah kode success, provider akan menghasilkan data dan UI menampilkan state success.
 
+4. Refleksikan: mengapa menampilkan ulang data lama (stale data) dengan indikator refresh kadang lebih baik daripada mengosongkan layar? Kapan pola itu penting?
+
+Saat refresh data, ada 2 pendekatan :
+- Mengosongkan layar lalu menampilkan loading.
+- Tetap menampilkan data lama, sambil menunjukkan indikator refresh.
+
+Menampilkan data lama lebih baik karena pengguna masih bisa membaca atau menggunakan data yang tersedia.
