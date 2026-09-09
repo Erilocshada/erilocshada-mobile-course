@@ -12,7 +12,8 @@ class Todo {
 class TodoListNotifier extends AsyncNotifier<List<String>> {
   @override
   Future<List<String>> build() async {
-    throw Exception('Gagal terhubung ke server');
+    await Future.delayed(const Duration(seconds: 2));
+    return ['Keyboard', 'Mouse', 'Monitor'];
   }
 
   Future<void> refresh() async {
