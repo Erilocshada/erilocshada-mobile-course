@@ -104,3 +104,26 @@ Merubah build() menjadi :
 
 UI masuk ke state AsyncError dan menampilkan pesan eror dan button coba lagi.
 
+3. Tekan tombol Coba lagi, ref.invalidate membuat provider dijalankan ulang. Pulihkan kode, pastikan state success tampil.
+
+Hasil :
+
+<table>
+  <tr>
+    <td>
+      <img src="Screenshoot/Eror.png" width="400">
+    </td>
+    <td>
+      <img src="Screenshoot/invalidate.png" width="400">
+    </td>
+  </tr>
+</table>
+
+Penjelasan :
+
+Tombol coba lagi menjalankan:
+
+    ref.invalidate(todoListProvider);
+
+ref.invalidate membuang state provider sebelumnya dan menjalankan ulang build(), setelah kode success, provider akan menghasilkan data dan UI menampilkan state success.
+
