@@ -9,12 +9,14 @@ class Stat {
   final String value;
 }
 
+final statsRandomProvider = Provider<Random>((ref) => Random());
+
 class StatsNotifier extends AsyncNotifier<List<Stat>> {
   @override
   Future<List<Stat>> build() async {
     await Future.delayed(const Duration(seconds: 2));
 
-    if (Random().nextDouble() < 0.3) {
+    if (ref.read(statsRandomProvider).nextDouble() < 0.3) {
       throw Exception('Gagal memuat statistik');
     }
 
@@ -26,5 +28,6 @@ class StatsNotifier extends AsyncNotifier<List<Stat>> {
   }
 }
 
-final statsProvider =
-    AsyncNotifierProvider<StatsNotifier, List<Stat>>(StatsNotifier.new);
+final statsProvider = AsyncNotifierProvider<StatsNotifier, List<Stat>>(
+  StatsNotifier.new,
+);
