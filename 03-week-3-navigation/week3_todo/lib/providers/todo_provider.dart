@@ -12,7 +12,7 @@ class Todo {
 class TodoListNotifier extends AsyncNotifier<List<String>> {
   @override
   Future<List<String>> build() async {
-    await Future.delayed(const Duration(seconds: 2)); // simulasi network
+    await Future.delayed(const Duration(seconds: 5)); // simulasi network
     return ['Keyboard', 'Mouse', 'Monitor'];
   }
 
