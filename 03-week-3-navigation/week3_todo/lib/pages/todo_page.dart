@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/todo_provider.dart';
+import '../providers/todo_provider.dart';
+import '../widgets/todo_tile.dart';
 
 class TodoPage extends ConsumerWidget {
   const TodoPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(todoListProvider);
+    final todosAsync = ref.watch(incompleteTodoListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Produk')),
-      body: productsAsync.when(
+      appBar: AppBar(title: const Text('ToDo belum selesai')),
+      body: todosAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
+        error: (error, stack) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Gagal memuat: $err'),
+              Text('Gagal memuat: $error'),
               FilledButton(
                 onPressed: () => ref.invalidate(todoListProvider),
                 child: const Text('Coba lagi'),
@@ -25,41 +26,16 @@ class TodoPage extends ConsumerWidget {
             ],
           ),
         ),
-        data: (products) => ListView.builder(
-          itemCount: products.length,
-          itemBuilder: (context, index) =>
-              ListTile(title: Text(products[index])),
+        data: (todos) => ListView.builder(
+          itemCount: todos.length,
+          itemBuilder: (context, index) => TodoTile(
+            todo: todos[index],
+            onChanged: () => ref
+              .read(todoListProvider.notifier)
+              .toggleDone(todos[index]),
+          ),
         ),
       ),
     );
   }
 }
-
-//   void _showAddDialog(BuildContext context, WidgetRef ref) {
-//     final controller = TextEditingController();
-//     showDialog(
-//       context: context,
-//       builder: (context) => AlertDialog(
-//         title: const Text('Tugas baru'),
-//         content: TextField(controller: controller, autofocus: true),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.pop(context),
-//             child: const Text('Batal'),
-//           ),
-//           FilledButton(
-//             onPressed: () {
-//               if (controller.text.trim().isNotEmpty) {
-//                 ref
-//                     .read(todoListProvider.notifier)
-//                     .add(controller.text.trim());
-//               }
-//               Navigator.pop(context);
-//             },
-//             child: const Text('Tambah'),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
