@@ -54,10 +54,15 @@ Foto :
 #### 3. Sementara ubah baseUrl menjadi URL salah, amati pesan error koneksi. Kembalikan setelah uji.
 <table>
     <td>
+      <img src="Screenshoot/Uji2.png" width="400">
+    </td>
+  </tr>
+    <td>
       <img src="Screenshoot/Uji3.png" width="400">
     </td>
   </tr>
-      <td>
+  <tr>
+    <td>
       <img src="Screenshoot/Uji3.1.png" width="400">
     </td>
   </tr>
