@@ -48,25 +48,32 @@ final postListProvider = AsyncNotifierProvider<PostListNotifier, List<Post>>(
 );
 
 class CommentListNotifier extends AsyncNotifier<List<Comment>> {
-  @override
-  Future<List<Comment>> build() async {
-    // Arg dari provider family tersedia melalui property `arg`.
-    final repository = ref.watch(commentRepositoryProvider);
-    return repository.fetchComments(arg);
+  int _postId = 1;
+
+  void setPostId(int postId) {
+    _postId = postId;
   }
 
-  Future<void> refresh() async {
+  @override
+  Future<List<Comment>> build() async {
+    // State provider dibuat sekali, lalu postId bisa diubah lewat method setPostId.
+    final repository = ref.watch(commentRepositoryProvider);
+    return repository.fetchComments(_postId);
+  }
+
+  Future<void> loadComments(int postId) async {
+    _postId = postId;
     state = const AsyncLoading();
     try {
       final repository = ref.read(commentRepositoryProvider);
-      state = AsyncData(await repository.fetchComments(arg));
+      state = AsyncData(await repository.fetchComments(postId));
     } catch (e, st) {
       state = AsyncError(e, st);
     }
   }
 }
 
-final commentListProvider = AsyncNotifierProvider.family<CommentListNotifier, List<Comment>, int>(
+final commentListProvider = AsyncNotifierProvider<CommentListNotifier, List<Comment>>(
   CommentListNotifier.new,
   retry: (retryCount, error) => null,
 );
@@ -95,7 +102,7 @@ Future<List<Post>> readPostsOnce(ProviderContainer container) {
 Future<List<Comment>> readCommentsOnce(ProviderContainer container, int postId) {
   final completer = Completer<List<Comment>>();
   final sub = container.listen<AsyncValue<List<Comment>>>(
-    commentListProvider(postId),
+    commentListProvider,
     (previous, next) {
       if (next.isLoading || completer.isCompleted) return;
       next.whenData(completer.complete);
@@ -108,6 +115,8 @@ Future<List<Comment>> readCommentsOnce(ProviderContainer container, int postId) 
     },
     fireImmediately: true,
   );
+
+  container.read(commentListProvider.notifier).setPostId(postId);
   return completer.future.whenComplete(sub.close);
 }
 
