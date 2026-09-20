@@ -62,3 +62,37 @@ Foto :
     </td>
   </tr>
 </table>
+
+# Praktikum 3
+1. Repository paginated
+2. Notifier dengan state halaman
+3. UI infinite scroll
+
+# AI Chalenge
+#### Checklist verifikasi AI
+1.  UI tidak memanggil Dio langsung
+
+UI tidak melakukan request API sendiri. Semua request dipindahkan ke repository dan provider.
+
+2. fromJson aman null
+
+Benar, tidak memakai cast langsung yang bisa crash. Semua field aman dengan fallback default.
+
+3. Semua DioExceptionType dipetakan ke pesan user
+
+Timeout, connection error, badResponse dipetakan. Untuk badResponse sudah ada mapping:
+
+- 404
+- 500
+- 401/403
+- default error
+
+4. baseUrl/timeout terpusat
+
+Benar, semua config Dio ada di api_client.dart, bukan tersebar.
+5.  Test edge case minimal sudah ada
+
+Sudah ada 1 unit test khusus untuk field yang hilang.
+
+6. flutter analyze + flutter test -> Sudah dijalankan dan hasilnya berhasil.
+
