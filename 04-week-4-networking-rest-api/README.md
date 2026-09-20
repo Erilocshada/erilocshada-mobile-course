@@ -29,7 +29,7 @@ Foto :
 </table>
 
 ### Uji skenario error
-1. Jalankan aplikasi dengan internet normal, amati loading lalu daftar 100 posts.
+#### 1. Jalankan aplikasi dengan internet normal, amati loading lalu daftar 100 posts.
 
    Foto:
 
@@ -40,7 +40,7 @@ Foto :
   </tr>
 </table>
 
-2. Matikan internet (mode pesawat), tekan refresh, amati pesan ramah + tombol Coba lagi. Nyalakan kembali internet, tekan Coba lagi.
+#### 2. Matikan internet (mode pesawat), tekan refresh, amati pesan ramah + tombol Coba lagi. Nyalakan kembali internet, tekan Coba lagi.
 
 Foto :
 
@@ -51,7 +51,7 @@ Foto :
   </tr>
 </table>
 
-3. Sementara ubah baseUrl menjadi URL salah, amati pesan error koneksi. Kembalikan setelah uji.
+#### 3. Sementara ubah baseUrl menjadi URL salah, amati pesan error koneksi. Kembalikan setelah uji.
 <table>
     <td>
       <img src="Screenshoot/Uji3.png" width="400">
