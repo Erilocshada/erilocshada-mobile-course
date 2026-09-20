@@ -106,8 +106,6 @@ Sudah ada 1 unit test khusus untuk field yang hilang.
 
 
 2. Pagination pada sisi client lebih sesuai diterapkan ketika jumlah data yang dikelola masih relatif sedikit. Sebagai contoh, daftar kontak dengan jumlah sekitar 100 hingga 500 data masih memungkinkan untuk dimuat secara keseluruhan tanpa memberikan beban yang terlalu besar terhadap aplikasi.
-
-
 Sementara itu, pagination pada sisi server lebih tepat digunakan untuk menangani data dalam jumlah besar, seperti data transaksi, artikel berita, maupun timeline media sosial. Data tidak perlu dimuat sekaligus, tetapi dapat dikirim secara bertahap dengan memanfaatkan parameter seperti `_page` dan `_limit`. Dengan cara tersebut, penggunaan memori perangkat dan kuota internet dapat dikurangi sehingga proses pengambilan data menjadi lebih efisien.
 3. Ketika terjadi kesalahan pada Repository hingga menghasilkan exception, Riverpod dapat menangani kondisi tersebut melalui `AsyncNotifier` maupun `FutureProvider`. Dalam keadaan ini, status data akan berubah menjadi `AsyncError`, sehingga UI hanya perlu membaca status tersebut untuk menentukan apakah pesan kesalahan perlu ditampilkan kepada pengguna. Meskipun demikian, penggunaan `try/catch` tetap diperlukan pada kondisi tertentu ketika error membutuhkan penanganan yang lebih spesifik. Contohnya adalah ketika pengguna melakukan proses login, mengirimkan data melalui tombol, atau ketika aplikasi perlu memberikan notifikasi berupa `Snackbar` maupun `Dialog` sebagai informasi bahwa telah terjadi kesalahan.
 
