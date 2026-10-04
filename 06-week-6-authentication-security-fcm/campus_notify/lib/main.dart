@@ -1,13 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'messaging/push_service.dart';
 import 'pages/announcement_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'providers/auth_provider.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
+  // Request Notification Permission (Android 13+ & iOS)
+  await requestNotificationPermission();
+
+  // Initialize Local Notifications and FCM Foreground/Background handlers
+  await initLocalNotifications();
+
+  // Initialize FCM Token and listeners
+  await initFcmToken(
+    onToken: (token) async {
+      debugPrint('=================================');
+      debugPrint('FCM TOKEN:');
+      debugPrint(token);
+      debugPrint('=================================');
+    },
+  );
+
   runApp(
     const ProviderScope(
       child: CampusNotifyApp(),

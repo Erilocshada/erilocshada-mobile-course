@@ -66,6 +66,7 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
+
   Future<void> _checkLogin() async {
     final accessToken =
     await _tokenStore.getAccessToken();
