@@ -1,30 +1,52 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:week5_offline_notes/main.dart';
+import 'package:week5_offline_notes/data/local/note.dart';
+import 'package:week5_offline_notes/pages/notes_page.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('NoteTile menampilkan judul dan badge belum tersinkron',
+          (WidgetTester tester) async {
+        final dirtyNote = Note(
+          id: 1,
+          title: 'Catatan Kotor',
+          body: 'Isi catatan',
+          updatedAt: DateTime(2026, 9, 21),
+          dirty: true,
+        );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: NoteTile(note: dirtyNote),
+            ),
+          ),
+        );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+        expect(find.text('Catatan Kotor'), findsOneWidget);
+        expect(find.text('belum tersinkron'), findsOneWidget);
+        expect(find.byIcon(Icons.sync_problem), findsOneWidget);
+      });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
+  testWidgets('NoteTile menampilkan ikon cloud_done bila sudah tersinkron',
+          (WidgetTester tester) async {
+        final cleanNote = Note(
+          id: 2,
+          title: 'Catatan Bersih',
+          body: 'Isi catatan',
+          updatedAt: DateTime(2026, 9, 21),
+          dirty: false,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: NoteTile(note: cleanNote),
+            ),
+          ),
+        );
+
+        expect(find.text('Catatan Bersih'), findsOneWidget);
+        expect(find.byIcon(Icons.cloud_done), findsOneWidget);
+      });
 }
