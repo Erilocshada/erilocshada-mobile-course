@@ -1,33 +1,27 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import 'messaging/push_service.dart';
 import 'pages/announcement_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'providers/auth_provider.dart';
+import 'providers/push_provider.dart';
+import 'routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inisialisasi Firebase App
   await Firebase.initializeApp();
 
-  // Request Notification Permission (Android 13+ & iOS)
-  await requestNotificationPermission();
-
-  // Initialize Local Notifications and FCM Foreground/Background handlers
-  await initLocalNotifications();
-
-  // Initialize FCM Token and listeners
-  await initFcmToken(
-    onToken: (token) async {
-      debugPrint('=================================');
-      debugPrint('FCM TOKEN:');
-      debugPrint(token);
-      debugPrint('=================================');
-    },
-  );
+  // ⛔ [TANPA BUILDCONTEXT]
+  // Registrasi Top-Level Background Message Handler.
+  // Harus dipanggil di main() sebelum runApp()
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(
     const ProviderScope(
@@ -53,7 +47,7 @@ class _CampusNotifyAppState extends ConsumerState<CampusNotifyApp> {
     super.initState();
 
     _router = GoRouter(
-      initialLocation: '/',
+      initialLocation: RoutePaths.home,
       redirect: (
         context,
         state,
@@ -65,53 +59,41 @@ class _CampusNotifyAppState extends ConsumerState<CampusNotifyApp> {
         }
 
         final loggedIn = authState.isAuthenticated;
-
-        final isLoginPage = state.matchedLocation == '/login';
+        final isLoginPage = state.matchedLocation == RoutePaths.login;
 
         if (!loggedIn && !isLoginPage) {
-          return '/login';
+          return RoutePaths.login;
         }
 
         if (loggedIn && isLoginPage) {
-          return '/';
+          return RoutePaths.home;
         }
 
         return null;
       },
       routes: [
         GoRoute(
-          path: '/login',
-          builder: (
-            context,
-            state,
-          ) {
-            return const LoginPage();
-          },
+          path: RoutePaths.login,
+          builder: (context, state) => const LoginPage(),
         ),
         GoRoute(
-          path: '/',
-          builder: (
-            context,
-            state,
-          ) {
-            return const HomePage();
-          },
+          path: RoutePaths.home,
+          builder: (context, state) => const HomePage(),
         ),
         GoRoute(
-          path: '/pengumuman/:id',
-          builder: (
-            context,
-            state,
-          ) {
+          path: RoutePaths.pengumumanDetail,
+          builder: (context, state) {
             final id = state.pathParameters['id']!;
-
-            return AnnouncementPage(
-              id: id,
-            );
+            return AnnouncementPage(id: id);
           },
         ),
       ],
     );
+
+    // Inisialisasi PushService setelah Router disiapkan
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(pushServiceProvider).initialize(router: _router);
+    });
   }
 
   @override
@@ -120,6 +102,18 @@ class _CampusNotifyAppState extends ConsumerState<CampusNotifyApp> {
       authProvider,
       (previous, next) {
         _router.refresh();
+      },
+    );
+
+    // Dengarkan stream navigasi dari PushService (Deeplink dari Notifikasi)
+    ref.listen<AsyncValue<String>>(
+      pushNavigationStreamProvider,
+      (previous, next) {
+        next.whenData((route) {
+          if (route.isNotEmpty) {
+            _router.go(route);
+          }
+        });
       },
     );
 
