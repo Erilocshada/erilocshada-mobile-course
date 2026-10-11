@@ -58,3 +58,40 @@ lib/
 Saya tidak membuat fitur baru — hanya memindahkan dan memisahkan kode yang
 sudah jalan. Snapshot commit `chore: snapshot before clean architecture`
 sudah saya buat sebelum menyentuh kode.
+
+## Praktikum 2 — Domain dan data per fitur
+
+Saya buat layer **domain** lebih dulu (inti yang stabil), baru **data** yang
+menyambungkannya ke Dio/SQLite/secure storage. File lama sengaja belum saya
+hapus — saya pindahkan bertahap supaya aplikasi tetap bisa dibandingkan.
+
+### Yang saya buat
+
+1. `lib/core/failures.dart` — `sealed class Failure` + `ValidationFailure`,
+   `AuthFailure`, `NetworkFailure`, `LocalFailure`. Murni Dart, tanpa import framework.
+2. `lib/core/format.dart` — fungsi murni hasil ekstraksi dari file infra lama:
+   `maskToken()`, `routeFromMessage()`, dan `formatDate()` (biar bisa diuji tanpa widget).
+3. **auth** — `domain/entities/auth_session.dart` (entity murni, tanpa mapping),
+   `domain/repositories/auth_repository.dart` + `session_repository.dart` (kontrak),
+   `domain/usecases/sign_in.dart`, `data/models/auth_session_model.dart`
+   (fromJson HANYA di model), `data/repositories/auth_repository_impl.dart`
+   (validasi lama yang dulu `throw Exception` sekarang mengembalikan
+   `ValidationFailure`), `data/repositories/session_repository_impl.dart`,
+   `data/token_store.dart`, `data/api_client.dart` (di-refactor: interceptor
+   sekarang bergantung abstraksi domain, bukan concretion).
+4. **announcements** — entity `Announcement`, interface repository,
+   `GetAnnouncement` (aturan bisnis: validasi id), `AnnouncementModel.fromJson`,
+   impl mock dengan data yang sama seperti minggu 6.
+5. **push** — interface `PushRepository` + konstanta `PushTopics` di domain;
+   `PushServiceImpl` (data) mengimplementasikannya — seluruh import
+   Firebase/Dio/SecureStorage kini TERKUNCI di layer data.
+
+### Keputusan penting
+
+- Kontrak repository saya taruh di **domain** karena domain yang menentukan
+  APA yang dibutuhkan; data layer yang menentukan BAGAIMANA.
+- Hasil sukses/gagal memakai **record Dart** `({T? x, Failure? failure})`
+  seperti contoh codelab — bukan exception, supaya tidak ada yang bocor ke UI.
+- `SignIn` saya jadikan use case karena mengorkestrasi 2 repository
+  (login + simpan sesi). Untuk CRUD satu baris saya TIDAK membuat use case
+  (alasan lengkap di laporan AI Challenge nanti).
