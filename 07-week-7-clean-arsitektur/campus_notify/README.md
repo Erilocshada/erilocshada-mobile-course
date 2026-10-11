@@ -1,69 +1,60 @@
-# Campus Notification App (`campus_notify`)
+# Laporan Jobsheet #07 — Clean Architecture (campus_notify)
 
-Aplikasi Flutter Campus Notification App menggunakan **Firebase Cloud Messaging (FCM)**, **Flutter Local Notifications**, **Flutter Secure Storage**, **GoRouter**, dan **Riverpod**.
+Saya merefactor project Minggu 6 saya, `campus_notify` (auth + FCM + pengumuman),
+menjadi Clean Architecture feature-first. Laporan ini saya tulis bertahap
+per praktikum sesuai codelab.
 
----
+## Praktikum 1 — Audit layer project lama
 
-## 📋 AI Verification Checklist & Temuan Verifikasi
+### 1. Peta file ke layer (sebelum refactor)
 
-Berikut adalah hasil verifikasi teknis dan pengujian terhadap implementasi `PushService` di [`lib/messaging/push_service.dart`](file:///d:/KULIAH/SMT-5/Pemmob/06-week-6-authentication-security-fcm/campus_notify/lib/messaging/push_service.dart):
+| File | Layer saat ini | Masalah yang saya temukan |
+|---|---|---|
+| `pages/home_page.dart` | presentation | Mengimpor provider yang meneruskan `PushService` konkret — Firebase/Dio/SecureStorage bocor transitif ke widget; logika subscribe topic bercampur dengan state widget |
+| `pages/login_page.dart` | presentation | Menerima `e.toString()` (exception mentah) dari notifier, bukan pesan ramah |
+| `pages/announcement_page.dart` | presentation | Data hardcoded di `build()` — tidak lewat repository sama sekali |
+| `providers/auth_provider.dart` | presentation (state) | Notifier memanggil concretion `AuthRepository` & `TokenStore` langsung; `AuthRepository()` diinstansiasi manual |
+| `providers/push_provider.dart` | presentation (DI) | Mengekspos class infra konkret ke widget |
+| `data/api_client.dart` | data | Bergantung concretion (bukan abstraksi domain); tidak dipakai siapa-siapa (dead code) |
+| `data/api_errors.dart` | data | Menghasilkan String, bukan objek `Failure` domain |
+| `data/auth_repository.dart` | data (+kontrak tercampur) | Interface & implementasi satu kelas; entity `AuthSession` hidup di data; validasi melempar `Exception` |
+| `data/token_store.dart` | data | OK, tapi dipakai langsung oleh presentation (via notifier) |
+| `messaging/push_service.dart` | data/infra | 436 baris melanggar SRP (permission+channel+token+HTTP+routing); mengimpor `GoRouter` — infra tahu presentation |
 
-### 1. Top-Level Background Handler (`@pragma('vm:entry-point')`)
-- **Status:** ✅ **DITERIMA**
-- **Verifikasi:** Fungsi `firebaseMessagingBackgroundHandler` dideklarasikan sebagai **fungsi top-level** (di luar class `PushService`) di file [`push_service.dart`](file:///d:/KULIAH/SMT-5/Pemmob/06-week-6-authentication-security-fcm/campus_notify/lib/messaging/push_service.dart#L23-L34) dan di-annotate dengan `@pragma('vm:entry-point')`.
-- **Alasan Teknis:** Fungsi tidak berada dalam kelas, sehingga aman dari AOT tree-shaking dan dapat dieksekusi oleh Engine di Background Isolate saat aplikasi mati/background.
+### 2. Tiga grep pelanggaran klasik (di project lama)
 
-### 2. Pengiriman Token Baru pada `onTokenRefresh`
-- **Status:** ✅ **DITERIMA**
-- **Verifikasi:** Method `_initTokenAndListeners()` di `PushService` mendaftarkan listener `_messaging.onTokenRefresh.listen((newToken) async { await sendTokenToServer(newToken); });`.
-- **Alasan Teknis:** Setiap kali FCM token ter-refresh, token baru secara otomatis disimpan di `FlutterSecureStorage` dan dikirim ke backend via HTTP `POST /devices`.
+```
+$ grep -rEn "Dio\(|http\.|openDatabase|SharedPreferences\.getInstance|FlutterSecureStorage" lib/pages lib/widgets
+(nol hasil langsung — TAPI lewat import push_provider, widget tetap tersambung ke FlutterSecureStorage/Dio transitif)
 
-### 3. Local Notification Manual di Foreground
-- **Status:** ✅ **DITERIMA**
-- **Verifikasi:** Method `_setupForegroundMessageHandler()` menangani `FirebaseMessaging.onMessage.listen()` dan memicu `_showManualLocalNotification()`.
-- **Alasan Teknis:** Secara default di Android & iOS, notifikasi FCM di foreground tidak memunculkan heads-up banner secara otomatis. Dengan memanggil `FlutterLocalNotificationsPlugin.show()`, notifikasi heads-up/banner dijamin muncul saat user sedang membuka aplikasi.
+$ grep -rEn "DateFormat|jsonDecode|\.toIso8601String" lib/pages lib/widgets
+(nol hasil)
 
-### 4. Tabel Pengujian Navigasi Notifikasi (3 State Aplikasi)
-- **Status:** ✅ **TERUJI & DITERIMA**
+$ grep -rEn "Repository\(|Dio\(BaseOptions" lib/pages lib/providers
+lib/providers/auth_provider.dart:15:    return AuthRepository();
+```
 
-| State Aplikasi | Trigger Notifikasi | Mekanisme Handler | Hasil Navigasi Rute (`data.route`) |
-| :--- | :--- | :--- | :--- |
-| **Foreground** (Aplikasi Terbuka) | FCM Push -> Banner Notifikasi Lokal Tampil -> User Tap Banner | Callback `onDidReceiveNotificationResponse` di `FlutterLocalNotificationsPlugin` memicu `_handleRouteNavigation(payload)`. | Navigasi berhasil ke `/pengumuman/:id` via `GoRouter`. |
-| **Background** (Aplikasi Minimised) | FCM Push -> System Tray -> User Tap Notifikasi | Callback `FirebaseMessaging.onMessageOpenedApp.listen` menangkap `message.data['route']`. | Aplikasi terbuka dan navigasi ke `/pengumuman/:id` via `GoRouter`. |
-| **Terminated** (Aplikasi Mati Total) | FCM Push -> System Tray -> User Tap Notifikasi | Method `FirebaseMessaging.instance.getInitialMessage()` membaca `message.data['route']` saat startup. | Aplikasi cold-boot dan langsung diarahkan ke `/pengumuman/:id`. |
+Temuan saya: pelanggaran terbesar bukan teks di widget, melainkan **arah
+dependensi** — presentation mengimpor infra konkret
+(`providers/push_provider.dart` → `messaging/push_service.dart`,
+`providers/auth_provider.dart` → `data/auth_repository.dart` + `data/token_store.dart`).
 
-### 5. Keamanan Token & Secret (No Hardcode & Masking Log)
-- **Status:** ✅ **DITERIMA & DIPERBAIKI**
-- **Verifikasi:**
-  1. BaseURL dan endpoint diambil dari konfigurasi API/Dio.
-  2. Token tidak di-hardcode. FCM token disimpan dengan aman di `FlutterSecureStorage`.
-  3. Log token menggunakan fungsi helper `maskToken(token)` (contoh: `fcm_to...x92k`) untuk mencegah kebocoran identifier sensitif di sistem pengawasan/console log.
+### 3. Struktur target yang saya rencanakan
 
----
+```
+lib/
+├── core/
+│   ├── failures.dart        # Failure domain (murni Dart)
+│   └── format.dart          # fungsi murni lintas fitur
+├── features/
+│   ├── auth/         domain/{entities,repositories,usecases}  data/{models,repositories}  presentation/{providers,pages}
+│   ├── announcements/   (pola sama)
+│   ├── push/            (interface di domain, Firebase/Dio terkunci di data)
+│   └── home/            presentation saja (screen komposit)
+├── main.dart
+└── routes.dart
+```
 
-## 🎯 Keputusan Final AI Draft
-
-- **Keputusan:** **DITERIMA (APPROVED)**
-- **Alasan Teknis:** Seluruh 5 poin checklist utama telah terpenuhi dan diverifikasi dengan kode standar produksi. Penanganan konteks (*BuildContext-free architecture*) menjaga aplikasi dari *runtime exception* `Looking up a deactivated widget's ancestor is unsafe` atau error crash di background isolate.
-
----
-
-## 🛠️ Error Umum & Solusinya
-
-| Gejala | Penyebab umum | Solusi |
-| :--- | :--- | :--- |
-| **Token null di emulator** | Emulator tanpa Google Play Services | Pakai emulator dengan ikon Play Store atau perangkat fisik |
-| **Banner tidak muncul saat foreground** | Mengandalkan banner otomatis sistem | Tampilkan manual via flutter_local_notifications di onMessage |
-| **Klik notifikasi tidak navigasi (terminated)** | getInitialMessage tidak dipanggil saat startup | Panggil handleTerminated setelah router siap, teruskan data.route |
-| **401 berulang meski sudah login** | Interceptor refresh tidak mengulang request / refresh ikut kedaluwarsa | Ulangi request sekali setelah refresh; bila gagal, clear() dan arahkan ke /login |
-| **MissingPluginException secure storage / messaging** | Hot reload setelah tambah plugin | Hentikan penuh lalu flutter run ulang |
-| **Notifikasi iOS tidak muncul** | Belum ada APNs key / capability push | Konfigurasi APNs di Firebase Console + aktifkan Push di Xcode |
-
----
-
-## ✅ Checklist Verifikasi Mandiri
-
-- [x] Token hanya di `flutter_secure_storage`, tidak di `SharedPreferences`/log/screenshot penuh.
-- [x] 401 memicu refresh sekali lalu retry; refresh mati memaksa login ulang.
-- [x] Ketiga app state teruji dengan tabel bukti; klik masuk ke rute yang benar.
-- [x] Topik untuk broadcast, token untuk pesan personal.
+Saya tidak membuat fitur baru — hanya memindahkan dan memisahkan kode yang
+sudah jalan. Snapshot commit `chore: snapshot before clean architecture`
+sudah saya buat sebelum menyentuh kode.
