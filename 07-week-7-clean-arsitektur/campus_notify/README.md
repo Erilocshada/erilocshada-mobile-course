@@ -139,3 +139,36 @@ No issues found!
 File lama (`lib/data`, `lib/providers`, `lib/pages`, `lib/messaging`) sudah
 saya hapus setelah semua pemindahan selesai. Hasil grep lengkap ada di
 `docs/GREP_VERIFICATION.md`.
+
+## Refactoring Challenge & Testing
+
+Tiga tantangan refactor dari codelab, semuanya sudah saya terapkan:
+
+1. **Pola sama untuk fitur kedua & ketiga** — auth dan announcements kini
+   sama bersihnya dengan push: entity + interface repository + impl +
+   use case + provider wiring. Tidak ada lagi fitur yang "kotor".
+2. **`lib/core/format.dart`** — `maskToken`, `routeFromMessage`, dan
+   `formatDate` menjadi fungsi murni yang bisa diuji tanpa widget
+   (`test/auth_push_test.dart` membuktikan `routeFromMessage` tetap teruji
+   setelah pindah rumah).
+3. **Exception mentah → Failure** — `AuthRepositoryImpl` tidak lagi
+   `throw Exception`; ia mengembalikan `ValidationFailure`/`AuthFailure`.
+   `push_errors.dart` menerjemahkan `DioException` menjadi `Failure`.
+   UI hanya menerima `failure.message` yang ramah.
+
+### Test use case dengan repository palsu
+
+Domain saya uji murni — tanpa SQLite, tanpa Dio, tanpa Firebase:
+
+- `test/announcements/get_announcement_test.dart` — `FakeAnnouncementRepository`:
+  sukses meneruskan data, failure tanpa melempar exception, validasi id kosong.
+- `test/auth/sign_in_test.dart` — `FakeAuthRepository` + `FakeSessionRepository`:
+  login sukses menyimpan sesi, login gagal TIDAK menyimpan sesi.
+- `test/widget_test.dart` — smoke test aplikasi utuh dengan
+  `ProviderScope(overrides: [...])` fake. Ini bukti paling nyata manfaat DI:
+  dulu mustahil menjalankan app tanpa plugin Firebase, sekarang cukup override.
+
+```
+$ flutter test
+All tests passed!  (11 test)
+```
