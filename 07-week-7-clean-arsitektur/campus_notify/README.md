@@ -1,8 +1,19 @@
 # Laporan Jobsheet #07 — Clean Architecture (campus_notify)
 
+> Mata kuliah: Pemrograman Mobile · Minggu 7 · Project: `campus_notify`
+> (auth + FCM + pengumuman) · Perangkat uji: OPPO CPH2269, Android 11
+
 Saya merefactor project Minggu 6 saya, `campus_notify` (auth + FCM + pengumuman),
 menjadi Clean Architecture feature-first. Laporan ini saya tulis bertahap
 per praktikum sesuai codelab.
+
+**Daftar isi:**
+
+1. [Praktikum 1 — Audit layer project lama](#praktikum-1--audit-layer-project-lama)
+2. [Praktikum 2 — Domain dan data per fitur](#praktikum-2--domain-dan-data-per-fitur)
+3. [Praktikum 3 — Presentation, DI, dan verifikasi](#praktikum-3--presentation-di-dan-verifikasi)
+4. [Refactoring Challenge & Testing](#refactoring-challenge--testing)
+5. [Laporan akhir](#laporan-akhir) — struktur final, arah dependensi, screenshot, checklist
 
 ## Praktikum 1 — Audit layer project lama
 
@@ -215,16 +226,23 @@ flutter run -d <android>  # FCM butuh perangkat/emulator Android
 
 ### Screenshot before/after (perangkat CPH2269, Android 11)
 
-- `screenshots/before/` — UI minggu 6 sebelum refactor.
-- `screenshots/after/` — UI hasil refactor, diambil via `flutter run` + `adb screencap`:
+#### Sebelum — bukti FCM minggu 6 (sebelum refactor)
 
-| File | Bukti |
-|---|---|
-| `after-01-home.png` | Home — auto-login dari sesi secure storage |
-| `after-02-announcement.png` | Detail pengumuman dari repository/use case (judul + tanggal + isi) |
-| `after-03-login.png` | Logout → route guard mengarahkan ke login |
-| `after-04-home-after-login.png` | Login akun demo berhasil → home |
-| `after-05-deeplink-pengumuman.png` | Cold start terminated: `getInitialMessage` → `navigationStream` → `/pengumuman/1` |
+| Notification "Test FCM" saat app tertutup | Foreground testing | Background testing | Recent tasks kosong (app terminated) | Terminated testing |
+|---|---|---|---|---|
+| ![before-1](screenshots/before/Screenshot_2026-10-04-23-40-13-21_40deb401b9ffe8e1df2f1cc5ba480b12.jpg) | ![before-2](screenshots/before/Screenshot_2026-10-05-02-49-51-02_a577b4e2495c416e6aaa7114589d0828.jpg) | ![before-3](screenshots/before/Screenshot_2026-10-05-03-11-02-05_92b64b2a7aa6eb3771ed6e18d0029815.jpg) | ![before-4](screenshots/before/Screenshot_2026-10-05-03-14-20-03_92b64b2a7aa6eb3771ed6e18d0029815.jpg) | ![before-5](screenshots/before/Screenshot_2026-10-05-03-14-32-78_92b64b2a7aa6eb3771ed6e18d0029815.jpg) |
+
+#### Sesudah — hasil refactor, diambil via `flutter run` + `adb screencap`
+
+| Home (auto-login dari secure storage) | Detail pengumuman dari repository | Route guard → login | Login demo berhasil | Deeplink terminated → `/pengumuman/1` |
+|---|---|---|---|---|
+| ![after-1](screenshots/after/after-01-home.png) | ![after-2](screenshots/after/after-02-announcement.png) | ![after-3](screenshots/after/after-03-login.png) | ![after-4](screenshots/after/after-04-home-after-login.png) | ![after-5](screenshots/after/after-05-deeplink-pengumuman.png) |
+
+Bukti UI setelah refactor identik dengan sebelum refactor — padahal seluruh
+rutenya sudah lewat repository/use case: detail pengumuman (judul + tanggal +
+isi) diambil dari `AnnouncementRepository`, dan cold start terminated
+`getInitialMessage` → `navigationStream` → `/pengumuman/1` tanpa `GoRouter`
+masuk ke layer infra.
 
 Uji manual lain yang tercatat di log runtime: toggle topic
 (Unsubscribe/Subscribe bekerja lewat interface `PushRepository`), dan login
