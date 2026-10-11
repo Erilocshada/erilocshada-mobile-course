@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'messaging/push_service.dart';
-import 'pages/announcement_page.dart';
-import 'pages/home_page.dart';
-import 'pages/login_page.dart';
-import 'providers/auth_provider.dart';
-import 'providers/push_provider.dart';
+import 'features/announcements/presentation/pages/announcement_page.dart';
+import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/providers/auth_providers.dart';
+import 'features/home/presentation/pages/home_page.dart';
+import 'features/push/data/push_service.dart';
+import 'features/push/presentation/providers/push_providers.dart';
 import 'routes.dart';
 
 Future<void> main() async {
@@ -90,9 +90,11 @@ class _CampusNotifyAppState extends ConsumerState<CampusNotifyApp> {
       ],
     );
 
-    // Inisialisasi PushService setelah Router disiapkan
+    // Inisialisasi PushRepository setelah Router disiapkan.
+    // Infra tidak lagi menerima GoRouter — deeplink mengalir lewat
+    // navigationStream yang didengarkan di build() bawah ini.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(pushServiceProvider).initialize(router: _router);
+      ref.read(pushRepositoryProvider).start();
     });
   }
 

@@ -95,3 +95,47 @@ hapus — saya pindahkan bertahap supaya aplikasi tetap bisa dibandingkan.
 - `SignIn` saya jadikan use case karena mengorkestrasi 2 repository
   (login + simpan sesi). Untuk CRUD satu baris saya TIDAK membuat use case
   (alasan lengkap di laporan AI Challenge nanti).
+
+## Praktikum 3 — Presentation, DI, dan verifikasi
+
+### Wiring DI (satu-satunya tempat layer disatukan)
+
+Riverpod murni, tanpa package DI tambahan:
+
+- `features/auth/presentation/providers/auth_providers.dart` —
+  `tokenStore → SessionRepository → AuthRepository → SignIn → AuthNotifier`.
+  Notifier sekarang memanggil use case/repository lewat abstraksi, tidak ada
+  lagi `AuthRepository()` di luar provider dan tidak ada lagi `e.toString()`.
+- `features/announcements/presentation/providers/announcement_providers.dart` —
+  `announcementProvider` (list) + `announcementDetailProvider` (family per id).
+- `features/push/presentation/providers/push_providers.dart` —
+  `Provider<PushRepository>`; widget hanya mengenal interface.
+
+### Halaman hanya membaca state
+
+`announcement_page.dart` saya ubah dari teks hardcoded menjadi `ConsumerWidget`
+dengan `state.when(loading/error/data)` + tombol retry (`ref.invalidate`).
+`home_page.dart` sekarang memanggil `PushRepository` (interface), bukan
+`PushServiceImpl`. Satu perubahan arah dependensi penting: `PushService` tidak
+lagi menerima `GoRouter` — deeplink mengalir lewat `navigationStream` dan
+`main.dart` yang menavigasi. Infra tidak tahu apa pun tentang presentation.
+
+### Verifikasi dependency rule (tiga grep — target NOL hasil)
+
+```
+$ grep -rEn "Dio\(|openDatabase|getDatabasesPath|FlutterSecureStorage|SharedPreferences\.getInstance|jsonDecode" lib/features/*/presentation
+(nol hasil)
+
+$ grep -rEn "import 'package:flutter|import 'package:dio|import 'package:sqflite|import 'package:firebase" lib/features/*/domain lib/core
+(nol hasil)
+
+$ grep -rn "Impl(" lib/features/*/presentation | grep -v "providers/"
+(nol hasil — instansiasi hanya terjadi di dalam Provider)
+
+$ flutter analyze
+No issues found!
+```
+
+File lama (`lib/data`, `lib/providers`, `lib/pages`, `lib/messaging`) sudah
+saya hapus setelah semua pemindahan selesai. Hasil grep lengkap ada di
+`docs/GREP_VERIFICATION.md`.

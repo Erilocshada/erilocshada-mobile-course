@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../providers/auth_provider.dart';
-import '../providers/push_provider.dart';
-import '../routes.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../push/domain/repositories/push_repository.dart';
+import '../../../push/presentation/providers/push_providers.dart';
+import '../../../../routes.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -18,7 +19,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final pushService = ref.watch(pushServiceProvider);
+    // Hanya bergantung pada KONTRAK domain, bukan PushService/Firebase.
+    final pushRepository = ref.watch(pushRepositoryProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +90,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   });
 
                   if (value) {
-                    await pushService.subscribeTopic('pengumuman-kampus');
+                    await pushRepository.subscribeTopic(
+                        PushTopics.kampus);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -97,7 +100,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       );
                     }
                   } else {
-                    await pushService.unsubscribeTopic('pengumuman-kampus');
+                    await pushRepository.unsubscribeTopic(
+                        PushTopics.kampus);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

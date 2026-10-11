@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:campus_notify/routes.dart';
+import 'package:campus_notify/core/format.dart';
 
 class FakeTokenStore {
   String? access;
