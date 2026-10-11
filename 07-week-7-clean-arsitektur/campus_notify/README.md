@@ -172,3 +172,71 @@ Domain saya uji murni — tanpa SQLite, tanpa Dio, tanpa Firebase:
 $ flutter test
 All tests passed!  (11 test)
 ```
+
+## Laporan akhir
+
+### Struktur final
+
+```
+lib/
+├── core/            failures.dart (sealed Failure) · format.dart (fungsi murni)
+├── features/
+│   ├── auth/            domain/{entities,repositories,usecases} · data/{models,repositories,token_store,api_client} · presentation/{providers,pages}
+│   ├── announcements/   domain/{entities,repositories,usecases} · data/{models,repositories} · presentation/{providers,pages}
+│   ├── push/            domain/repositories (interface+topics) · data (Firebase/Dio/Storage terkunci di sini) · presentation/providers
+│   └── home/            presentation/pages (screen komposit)
+├── main.dart        composition root (bootstrap Firebase + Router)
+└── routes.dart      RoutePaths (pure Dart)
+```
+
+### Arah dependensi (yang saya gambar saat demo)
+
+```
+presentation ──► domain ◄── data
+```
+
+Domain tidak mengimpor apa pun dari Flutter/Dio/Firebase; presentation hanya
+menyentuh data lewat satu titik: file provider.
+
+### Stack teknologi
+
+Flutter 3.47 / Dart 3.13 · flutter_riverpod ^3.4 (state + DI) · go_router ^18 ·
+dio ^5.11 · flutter_secure_storage ^11 · firebase_core ^4 / firebase_messaging ^16 ·
+flutter_local_notifications ^22 · flutter_lints ^6.
+
+### Cara menjalankan
+
+```bash
+flutter pub get
+flutter test              # 11 test domain murni + smoke test
+flutter analyze           # bersih
+flutter run -d <android>  # FCM butuh perangkat/emulator Android
+```
+
+### Screenshot before/after (perangkat CPH2269, Android 11)
+
+- `screenshots/before/` — UI minggu 6 sebelum refactor.
+- `screenshots/after/` — UI hasil refactor, diambil via `flutter run` + `adb screencap`:
+
+| File | Bukti |
+|---|---|
+| `after-01-home.png` | Home — auto-login dari sesi secure storage |
+| `after-02-announcement.png` | Detail pengumuman dari repository/use case (judul + tanggal + isi) |
+| `after-03-login.png` | Logout → route guard mengarahkan ke login |
+| `after-04-home-after-login.png` | Login akun demo berhasil → home |
+| `after-05-deeplink-pengumuman.png` | Cold start terminated: `getInitialMessage` → `navigationStream` → `/pengumuman/1` |
+
+Uji manual lain yang tercatat di log runtime: toggle topic
+(Unsubscribe/Subscribe bekerja lewat interface `PushRepository`), dan login
+invalid menampilkan pesan `ValidationFailure` yang ramah — bukan exception mentah.
+
+### Checklist definisi selesai (jobsheet)
+
+- [x] Snapshot commit sebelum refactor.
+- [x] 2+ fitur penuh terpisah domain/data/presentation — bukan sekadar pindah folder.
+- [x] Tiga grep sterilitas NOL hasil (`docs/GREP_VERIFICATION.md`).
+- [x] Interface di domain, implementasi di data, mapping hanya di model.
+- [x] Widget tidak menginstansiasi repository; wiring terpusat di provider.
+- [x] Aplikasi berjalan identik sebelum/sesudah (uji manual + screenshot di perangkat).
+- [x] `flutter analyze` bersih, 11 test lulus (use case sukses + failure dengan repository palsu).
+- [x] AI Challenge terdokumentasi (`docs/AI_CHALLENGE.md`): prompt, usulan-vs-keputusan, trade-off, refleksi.
