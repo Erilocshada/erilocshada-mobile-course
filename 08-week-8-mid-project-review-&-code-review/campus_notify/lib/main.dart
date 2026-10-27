@@ -23,17 +23,11 @@ Future<void> main() async {
   // Harus dipanggil di main() sebelum runApp()
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  runApp(
-    const ProviderScope(
-      child: CampusNotifyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: CampusNotifyApp()));
 }
 
 class CampusNotifyApp extends ConsumerStatefulWidget {
-  const CampusNotifyApp({
-    super.key,
-  });
+  const CampusNotifyApp({super.key});
 
   @override
   ConsumerState<CampusNotifyApp> createState() => _CampusNotifyAppState();
@@ -48,10 +42,7 @@ class _CampusNotifyAppState extends ConsumerState<CampusNotifyApp> {
 
     _router = GoRouter(
       initialLocation: RoutePaths.home,
-      redirect: (
-        context,
-        state,
-      ) {
+      redirect: (context, state) {
         final authState = ref.read(authProvider);
 
         if (authState.isLoading) {
@@ -100,32 +91,26 @@ class _CampusNotifyAppState extends ConsumerState<CampusNotifyApp> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(
-      authProvider,
-      (previous, next) {
-        _router.refresh();
-      },
-    );
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      _router.refresh();
+    });
 
     // Dengarkan stream navigasi dari PushService (Deeplink dari Notifikasi)
-    ref.listen<AsyncValue<String>>(
-      pushNavigationStreamProvider,
-      (previous, next) {
-        next.whenData((route) {
-          if (route.isNotEmpty) {
-            _router.go(route);
-          }
-        });
-      },
-    );
+    ref.listen<AsyncValue<String>>(pushNavigationStreamProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((route) {
+        if (route.isNotEmpty) {
+          _router.go(route);
+        }
+      });
+    });
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Campus Notify',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
       routerConfig: _router,
     );
   }

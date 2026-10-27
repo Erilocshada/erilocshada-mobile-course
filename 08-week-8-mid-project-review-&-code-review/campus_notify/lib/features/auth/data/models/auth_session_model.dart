@@ -10,22 +10,22 @@ class AuthSessionModel extends AuthSession {
 
   factory AuthSessionModel.fromJson(Map<String, dynamic> json) {
     return AuthSessionModel(
-      accessToken: json['access_token'] as String? ??
+      accessToken:
+          json['access_token'] as String? ??
           json['accessToken'] as String? ??
           '',
-      refreshToken: json['refresh_token'] as String? ??
+      refreshToken:
+          json['refresh_token'] as String? ??
           json['refreshToken'] as String? ??
           '',
     );
   }
 
   Map<String, Object?> toJson() => {
-        'access_token': accessToken,
-        'refresh_token': refreshToken,
-      };
+    'access_token': accessToken,
+    'refresh_token': refreshToken,
+  };
 
-  AuthSession toEntity() => AuthSession(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      );
+  AuthSession toEntity() =>
+      AuthSession(accessToken: accessToken, refreshToken: refreshToken);
 }

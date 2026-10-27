@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -29,7 +30,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Wajib melakukan initializeApp jika perlu mengakses Firebase service di background isolate.
   await Firebase.initializeApp();
 
-  debugPrint('*** [FCM Background Handler] Message ID: ${message.messageId} ***');
+  debugPrint(
+    '*** [FCM Background Handler] Message ID: ${message.messageId} ***',
+  );
   debugPrint('Title: ${message.notification?.title}');
   debugPrint('Data: ${message.data}');
 }
@@ -47,18 +50,19 @@ class PushServiceImpl implements PushRepository {
     FlutterSecureStorage? secureStorage,
     Dio? dio,
     String? baseUrl,
-  })  : _messaging = messaging ?? FirebaseMessaging.instance,
-        _localNotifications =
-            localNotifications ?? FlutterLocalNotificationsPlugin(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: baseUrl ?? 'https://example.com/api',
-                connectTimeout: const Duration(seconds: 10),
-                receiveTimeout: const Duration(seconds: 10),
-              ),
-            ) {
+  }) : _messaging = messaging ?? FirebaseMessaging.instance,
+       _localNotifications =
+           localNotifications ?? FlutterLocalNotificationsPlugin(),
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _dio =
+           dio ??
+           Dio(
+             BaseOptions(
+               baseUrl: baseUrl ?? 'https://example.com/api',
+               connectTimeout: const Duration(seconds: 10),
+               receiveTimeout: const Duration(seconds: 10),
+             ),
+           ) {
     // Interceptor bawaan untuk menangani URL Dummy (example.com) secara Mock
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -158,10 +162,12 @@ class PushServiceImpl implements PushRepository {
 
     // 📱 [ANDROID 13+] Minta izin eksplisit melalui flutter_local_notifications jika di Android
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final androidImplementation =
-          _localNotifications.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      final granted = await androidImplementation?.requestNotificationsPermission();
+      final androidImplementation = _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final granted = await androidImplementation
+          ?.requestNotificationsPermission();
       debugPrint('Android 13+ Local Notification Permission Granted: $granted');
     }
 
@@ -182,15 +188,17 @@ class PushServiceImpl implements PushRepository {
       playSound: true,
     );
 
-    final androidPlugin =
-        _localNotifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     await androidPlugin?.createNotificationChannel(androidChannel);
 
     // Initialization Settings per Platform
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     // 🍎 [iOS]: Configuration untuk darwin notification settings
     const iosSettings = DarwinInitializationSettings(
@@ -238,7 +246,9 @@ class PushServiceImpl implements PushRepository {
       // 🍎 [iOS]: Pada simulator/device iOS, pastikan APNs token tersedia sebelum meminta FCM token
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         final apnsToken = await _messaging.getAPNSToken();
-        debugPrint('APNs Token (masked): ${apnsToken != null ? maskToken(apnsToken) : "null"}');
+        debugPrint(
+          'APNs Token (masked): ${apnsToken != null ? maskToken(apnsToken) : "null"}',
+        );
       }
 
       final token = await deviceToken();
@@ -280,7 +290,9 @@ class PushServiceImpl implements PushRepository {
         },
       );
 
-      debugPrint('Success POST /devices: ${response.statusCode} - ${response.data}');
+      debugPrint(
+        'Success POST /devices: ${response.statusCode} - ${response.data}',
+      );
     } on DioException catch (e) {
       final failure = failureFromDio(e);
       if (e.response?.statusCode == 405 || e.response?.statusCode == 404) {
@@ -289,7 +301,9 @@ class PushServiceImpl implements PushRepository {
           'Token FCM tetap tersimpan aman di Secure Storage.',
         );
       } else {
-        debugPrint('Gagal mengirim FCM Token ke POST /devices: ${failure.message}');
+        debugPrint(
+          'Gagal mengirim FCM Token ke POST /devices: ${failure.message}',
+        );
       }
     } catch (e) {
       debugPrint('Gagal mengirim FCM Token ke POST /devices: $e');
@@ -325,10 +339,14 @@ class PushServiceImpl implements PushRepository {
 
     final title = notification?.title ?? data['title'] ?? 'Pengumuman Kampus';
     final body =
-        notification?.body ?? data['body'] ?? data['message'] ?? 'Ada pesan baru.';
+        notification?.body ??
+        data['body'] ??
+        data['message'] ??
+        'Ada pesan baru.';
     final routePayload = routeFromMessage(data);
 
-    final notificationId = message.messageId?.hashCode ??
+    final notificationId =
+        message.messageId?.hashCode ??
         DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     // 📱 [ANDROID 13+] Configuration Detail
@@ -388,7 +406,8 @@ class PushServiceImpl implements PushRepository {
     if (initialMessage != null) {
       debugPrint('*** [FCM Initial Message (Terminated App Click)] ***');
       final route = routeFromMessage(initialMessage.data);
-      if (route != RoutePaths.home || initialMessage.data.containsKey('route')) {
+      if (route != RoutePaths.home ||
+          initialMessage.data.containsKey('route')) {
         _handleRouteNavigation(route);
       }
     }

@@ -12,9 +12,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
   }) async {
-    await Future.delayed(
-      const Duration(seconds: 1),
-    );
+    await Future.delayed(const Duration(seconds: 1));
 
     if (!email.contains('@')) {
       return (
@@ -43,9 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<({String? accessToken, Failure? failure})> refresh(
     String refreshToken,
   ) async {
-    await Future.delayed(
-      const Duration(milliseconds: 500),
-    );
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (refreshToken.isEmpty) {
       return (
@@ -55,8 +51,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     return (
-      accessToken:
-          'new-access-token-${DateTime.now().millisecondsSinceEpoch}',
+      accessToken: 'new-access-token-${DateTime.now().millisecondsSinceEpoch}',
       failure: null,
     );
   }

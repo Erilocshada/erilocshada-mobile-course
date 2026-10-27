@@ -14,26 +14,23 @@ class AnnouncementModel extends Announcement {
       id: json['id']?.toString() ?? '',
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      publishedAt: DateTime.tryParse(
-        json['published_at'] as String? ??
-            json['createdAt'] as String? ??
-            '',
-      ) ??
+      publishedAt:
+          DateTime.tryParse(
+            json['published_at'] as String? ??
+                json['createdAt'] as String? ??
+                '',
+          ) ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 
   Map<String, Object?> toJson() => {
-        'id': id,
-        'title': title,
-        'body': body,
-        'published_at': publishedAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'body': body,
+    'published_at': publishedAt.toIso8601String(),
+  };
 
-  Announcement toEntity() => Announcement(
-        id: id,
-        title: title,
-        body: body,
-        publishedAt: publishedAt,
-      );
+  Announcement toEntity() =>
+      Announcement(id: id, title: title, body: body, publishedAt: publishedAt);
 }
