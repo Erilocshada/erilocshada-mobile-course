@@ -12,8 +12,9 @@ class FakeAnnouncementRepository implements AnnouncementRepository {
   final bool fail;
 
   @override
-  Future<({Announcement? announcement, Failure? failure})>
-  fetchAnnouncement(String id) async {
+  Future<({Announcement? announcement, Failure? failure})> fetchAnnouncement(
+    String id,
+  ) async {
     if (fail) {
       return (
         announcement: null,

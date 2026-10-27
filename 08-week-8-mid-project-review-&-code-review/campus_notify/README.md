@@ -1,260 +1,180 @@
-# Laporan Jobsheet #07 — Clean Architecture (campus_notify)
+# Laporan Jobsheet #08 — Mid Project Review & Code Review (campus_notify)
 
-> Mata kuliah: Pemrograman Mobile · Minggu 7 · Project: `campus_notify`
-> (auth + FCM + pengumuman) · Perangkat uji: OPPO CPH2269, Android 11
-
-Saya merefactor project Minggu 6 saya, `campus_notify` (auth + FCM + pengumuman),
-menjadi Clean Architecture feature-first. Laporan ini saya tulis bertahap
-per praktikum sesuai codelab.
+> Mata kuliah: Pemrograman Mobile · Minggu 8 · Project: `campus_notify`
+> (auth + FCM + pengumuman, hasil refactor Clean Architecture Minggu 7)
+> Perangkat uji: OPPO CPH2269, Android 11 · Tanggal: 27 Oktober 2026
 
 **Daftar isi:**
 
-1. [Praktikum 1 — Audit layer project lama](#praktikum-1--audit-layer-project-lama)
-2. [Praktikum 2 — Domain dan data per fitur](#praktikum-2--domain-dan-data-per-fitur)
-3. [Praktikum 3 — Presentation, DI, dan verifikasi](#praktikum-3--presentation-di-dan-verifikasi)
-4. [Refactoring Challenge & Testing](#refactoring-challenge--testing)
-5. [Laporan akhir](#laporan-akhir) — struktur final, arah dependensi, screenshot, checklist
+1. [Praktikum 1 — Hygiene branch dan commit](#praktikum-1--hygiene-branch-dan-commit)
+2. [Praktikum 2 — PR dan peer review](#praktikum-2--pr-dan-peer-review)
+3. [Praktikum 3 — Static analysis dan mid review](#praktikum-3--static-analysis-dan-mid-review)
+4. [AI Challenge](#ai-challenge)
+5. [Refactoring Challenge & Testing](#refactoring-challenge--testing)
+6. [Status paruh semester & peta issue/PR](#status-paruh-semester--peta-issuepr)
+7. [Cara menjalankan & hasil screenshot](#cara-menjalankan--hasil-screenshot)
+8. [Refleksi](#refleksi)
 
-## Praktikum 1 — Audit layer project lama
+Codelab minggu ini bukan membuat aplikasi baru — project yang saya review adalah
+`campus_notify` hasil Minggu 7. Yang dinilai adalah **disiplin kolaborasi**:
+Git Flow, commit dan PR yang layak review, peer review yang konstruktif,
+mesin static analysis yang hijau, dan kemampuan memverifikasi saran AI
+sebelum diterapkan.
 
-### 1. Peta file ke layer (sebelum refactor)
+---
 
-| File | Layer saat ini | Masalah yang saya temukan |
-|---|---|---|
-| `pages/home_page.dart` | presentation | Mengimpor provider yang meneruskan `PushService` konkret — Firebase/Dio/SecureStorage bocor transitif ke widget; logika subscribe topic bercampur dengan state widget |
-| `pages/login_page.dart` | presentation | Menerima `e.toString()` (exception mentah) dari notifier, bukan pesan ramah |
-| `pages/announcement_page.dart` | presentation | Data hardcoded di `build()` — tidak lewat repository sama sekali |
-| `providers/auth_provider.dart` | presentation (state) | Notifier memanggil concretion `AuthRepository` & `TokenStore` langsung; `AuthRepository()` diinstansiasi manual |
-| `providers/push_provider.dart` | presentation (DI) | Mengekspos class infra konkret ke widget |
-| `data/api_client.dart` | data | Bergantung concretion (bukan abstraksi domain); tidak dipakai siapa-siapa (dead code) |
-| `data/api_errors.dart` | data | Menghasilkan String, bukan objek `Failure` domain |
-| `data/auth_repository.dart` | data (+kontrak tercampur) | Interface & implementasi satu kelas; entity `AuthSession` hidup di data; validasi melempar `Exception` |
-| `data/token_store.dart` | data | OK, tapi dipakai langsung oleh presentation (via notifier) |
-| `messaging/push_service.dart` | data/infra | 436 baris melanggar SRP (permission+channel+token+HTTP+routing); mengimpor `GoRouter` — infra tahu presentation |
+## Praktikum 1 — Hygiene branch dan commit
 
-### 2. Tiga grep pelanggaran klasik (di project lama)
+Saya audit riwayat saya sendiri dengan `git log --oneline -15`, `git branch -a`,
+dan `git status`. Hasilnya jujur saja kurang enak dilihat:
 
-```
-$ grep -rEn "Dio\(|http\.|openDatabase|SharedPreferences\.getInstance|FlutterSecureStorage" lib/pages lib/widgets
-(nol hasil langsung — TAPI lewat import push_provider, widget tetap tersambung ke FlutterSecureStorage/Dio transitif)
+- semua commit minggu 1–7 masuk **langsung ke `main`**, tanpa `develop`, tanpa PR;
+- pesan commit seperti `Laporan Praktikum`, `Terminate Testing`, `Background` —
+  tidak ada satu pun yang format `tipe(scope): deskripsi`;
+- ada dua commit kembar `Praktikum Jobsheet 6` yang tidak jelas bedanya;
+- folder minggu 8 sempat lama tidak di-commit (untracked).
 
-$ grep -rEn "DateFormat|jsonDecode|\.toIso8601String" lib/pages lib/widgets
-(nol hasil)
+Perbaikan yang saya lakukan minggu ini:
 
-$ grep -rEn "Repository\(|Dio\(BaseOptions" lib/pages lib/providers
-lib/providers/auth_provider.dart:15:    return AuthRepository();
-```
+1. `develop` saya buat **sekali** dari `main`, lalu snapshot hasil minggu 7
+   saya commit ke sana: `c118ad6 chore(week8): snapshot campus_notify hasil minggu 7 untuk mid project review`.
+2. Kerja harian tidak lagi di `develop`, melainkan di branch
+   `feat/week8-review-discipline` — satu branch untuk satu tujuan.
+3. Tiap commit satu tanggung jawab, dan staging saya seleksi per kelompok file
+   (praktik `git add -p`) supaya diff bisa dibaca reviewer:
 
-Temuan saya: pelanggaran terbesar bukan teks di widget, melainkan **arah
-dependensi** — presentation mengimpor infra konkret
-(`providers/push_provider.dart` → `messaging/push_service.dart`,
-`providers/auth_provider.dart` → `data/auth_repository.dart` + `data/token_store.dart`).
+| Commit | Isi |
+|---|---|
+| `5650d72 style(week8): dart format murni...` | hanya 18 file hasil `dart format`, nol perubahan perilaku |
+| `f6d74c5 fix(auth): guard session null di SignIn + smoke test pakai fake DI` | perbaikan bug + 2 test, **tidak** tercampur format |
+| `6b4dfe7 chore: keluarkan folder Modul dari pelacakan git` | `.gitignore` untuk materi kuliah agar tidak menodai diff project |
+| `5063cbb ci(week8): tolak PR kotor...` | `.github/workflows/ci.yml` |
+| `7fdb1e2 docs(week8): review checklist...` | dua dokumen di `docs/` |
 
-### 3. Struktur target yang saya rencanakan
+4. Tabel rewrite 3 commit lama + alasannya ada di
+   [`docs/review-checklist.md`](docs/review-checklist.md) §2, hasil audit lengkap §1.
 
-```
-lib/
-├── core/
-│   ├── failures.dart        # Failure domain (murni Dart)
-│   └── format.dart          # fungsi murni lintas fitur
-├── features/
-│   ├── auth/         domain/{entities,repositories,usecases}  data/{models,repositories}  presentation/{providers,pages}
-│   ├── announcements/   (pola sama)
-│   ├── push/            (interface di domain, Firebase/Dio terkunci di data)
-│   └── home/            presentation saja (screen komposit)
-├── main.dart
-└── routes.dart
-```
+## Praktikum 2 — PR dan peer review
 
-Saya tidak membuat fitur baru — hanya memindahkan dan memisahkan kode yang
-sudah jalan. Snapshot commit `chore: snapshot before clean architecture`
-sudah saya buat sebelum menyentuh kode.
+Branch `feat/week8-review-discipline` saya ajukan sebagai **PR kecil ke `develop`**
+(5 commit, di bawah 300 baris perubahan perilaku, bisa direview < 15 menit).
+Template PR saya isi: masalah → solusi → cara uji → screenshot, plus `Closes #<issue>`
+agar issue tertutup otomatis saat merge.
 
-## Praktikum 2 — Domain dan data per fitur
+Aturan yang saya pegang saat menjadi reviewer pasangan maupun khi review:
+pola komentar **observasi → dampak → usulan konkret**, minimal 2 temuan kebenaran +
+1 arsitektur + 1 test + 1 keterbacaan, dan keputusan akhir harus eksplisit
+(*Approve* atau *Request changes*). Bersikap keras pada kode, baik pada manusia.
 
-Saya buat layer **domain** lebih dulu (inti yang stabil), baru **data** yang
-menyambungkannya ke Dio/SQLite/secure storage. File lama sengaja belum saya
-hapus — saya pindahkan bertahap supaya aplikasi tetap bisa dibandingkan.
+Hasil peer review beserta tindak lanjutnya saya catat di bagian
+[status paruh semester](#status-paruh-semester--peta-issuepr) dan thread PR di GitHub.
 
-### Yang saya buat
+## Praktikum 3 — Static analysis dan mid review
 
-1. `lib/core/failures.dart` — `sealed class Failure` + `ValidationFailure`,
-   `AuthFailure`, `NetworkFailure`, `LocalFailure`. Murni Dart, tanpa import framework.
-2. `lib/core/format.dart` — fungsi murni hasil ekstraksi dari file infra lama:
-   `maskToken()`, `routeFromMessage()`, dan `formatDate()` (biar bisa diuji tanpa widget).
-3. **auth** — `domain/entities/auth_session.dart` (entity murni, tanpa mapping),
-   `domain/repositories/auth_repository.dart` + `session_repository.dart` (kontrak),
-   `domain/usecases/sign_in.dart`, `data/models/auth_session_model.dart`
-   (fromJson HANYA di model), `data/repositories/auth_repository_impl.dart`
-   (validasi lama yang dulu `throw Exception` sekarang mengembalikan
-   `ValidationFailure`), `data/repositories/session_repository_impl.dart`,
-   `data/token_store.dart`, `data/api_client.dart` (di-refactor: interceptor
-   sekarang bergantung abstraksi domain, bukan concretion).
-4. **announcements** — entity `Announcement`, interface repository,
-   `GetAnnouncement` (aturan bisnis: validasi id), `AnnouncementModel.fromJson`,
-   impl mock dengan data yang sama seperti minggu 6.
-5. **push** — interface `PushRepository` + konstanta `PushTopics` di domain;
-   `PushServiceImpl` (data) mengimplementasikannya — seluruh import
-   Firebase/Dio/SecureStorage kini TERKUNCI di layer data.
-
-### Keputusan penting
-
-- Kontrak repository saya taruh di **domain** karena domain yang menentukan
-  APA yang dibutuhkan; data layer yang menentukan BAGAIMANA.
-- Hasil sukses/gagal memakai **record Dart** `({T? x, Failure? failure})`
-  seperti contoh codelab — bukan exception, supaya tidak ada yang bocor ke UI.
-- `SignIn` saya jadikan use case karena mengorkestrasi 2 repository
-  (login + simpan sesi). Untuk CRUD satu baris saya TIDAK membuat use case
-  (alasan lengkap di laporan AI Challenge nanti).
-
-## Praktikum 3 — Presentation, DI, dan verifikasi
-
-### Wiring DI (satu-satunya tempat layer disatukan)
-
-Riverpod murni, tanpa package DI tambahan:
-
-- `features/auth/presentation/providers/auth_providers.dart` —
-  `tokenStore → SessionRepository → AuthRepository → SignIn → AuthNotifier`.
-  Notifier sekarang memanggil use case/repository lewat abstraksi, tidak ada
-  lagi `AuthRepository()` di luar provider dan tidak ada lagi `e.toString()`.
-- `features/announcements/presentation/providers/announcement_providers.dart` —
-  `announcementProvider` (list) + `announcementDetailProvider` (family per id).
-- `features/push/presentation/providers/push_providers.dart` —
-  `Provider<PushRepository>`; widget hanya mengenal interface.
-
-### Halaman hanya membaca state
-
-`announcement_page.dart` saya ubah dari teks hardcoded menjadi `ConsumerWidget`
-dengan `state.when(loading/error/data)` + tombol retry (`ref.invalidate`).
-`home_page.dart` sekarang memanggil `PushRepository` (interface), bukan
-`PushServiceImpl`. Satu perubahan arah dependensi penting: `PushService` tidak
-lagi menerima `GoRouter` — deeplink mengalir lewat `navigationStream` dan
-`main.dart` yang menavigasi. Infra tidak tahu apa pun tentang presentation.
-
-### Verifikasi dependency rule (tiga grep — target NOL hasil)
+Tiga perintah wajib, semuanya hijau di `campus_notify`:
 
 ```
-$ grep -rEn "Dio\(|openDatabase|getDatabasesPath|FlutterSecureStorage|SharedPreferences\.getInstance|jsonDecode" lib/features/*/presentation
-(nol hasil)
-
-$ grep -rEn "import 'package:flutter|import 'package:dio|import 'package:sqflite|import 'package:firebase" lib/features/*/domain lib/core
-(nol hasil)
-
-$ grep -rn "Impl(" lib/features/*/presentation | grep -v "providers/"
-(nol hasil — instansiasi hanya terjadi di dalam Provider)
-
 $ flutter analyze
-No issues found!
+No issues found! (ran in 5.8s)
+
+$ dart format --output=none --set-exit-if-changed .
+Formatted 31 files (0 changed)
+
+$ flutter test
+00:06 +12: All tests passed!
 ```
 
-File lama (`lib/data`, `lib/providers`, `lib/pages`, `lib/messaging`) sudah
-saya hapus setelah semua pemindahan selesai. Hasil grep lengkap ada di
-`docs/GREP_VERIFICATION.md`.
+Saya juga pasang penolakan otomatis di CI (`.github/workflows/ci.yml`): setiap PR
+dan push ke `main`/`develop` menjalankan `flutter analyze`, `dart format --set-exit-if-changed`,
+dan `flutter test` di GitHub Actions — PR kotor ditolak mesin sebelum dibaca manusia.
+
+Satu catatan alat yang saya temukan sendiri: nama folder minggu 8 mengandung `&`
+(`08-week-8-mid-project-review-&-code-review`). Di Windows, karakter ini membuat
+*native assets hook* Flutter crash saat `flutter test` dijalankan dari folder itu.
+Solusi lokal: `subst W:` menjadi drive virtual lalu jalankan dari `W:\`; di CI Linux
+masalah ini tidak muncul. Saya jadikan pelajaran: **nama path repository mempengaruhi mesin build** —
+ke depannya hindari karakter shell-sensitive.
+
+Penilaian kesiapan tengah semester lengkap ada di
+[`docs/review-checklist.md`](docs/review-checklist.md) §5.
+
+## AI Challenge
+
+Prompt dari jobsheet saya jalankan pada PR saya sendiri. Dari 5 temuan AI, saya
+verifikasi satu per satu sebelum memutuskan — **2 temuan blocker terbukti benar
+dan saya perbaiki dengan bukti test merah → hijau**, dan 3 usulan saya tolak/delegasi
+dengan alasan tertulis:
+
+- **Diterima:** `SignIn` memakai `result.session!` yang crash bila repository
+  mengembalikan `(null, null)`. Bukti: test baru saya **gagal sebelum fix** dengan
+  `Null check operator used on a null value (sign_in.dart:27:35)`, hijau sesudahnya.
+- **Diterima:** smoke test menyentuh `FirebaseMessaging` asli (`[core/no-app]`).
+  Fix: override DI dengan `FakePushRepository` + `FakeTokenStore` — justru membuktikan
+  klaim minggu 7 bahwa titik wiring tunggal mudah di-fake.
+- **Ditolak/delegasi:** rapikan format manual saat review → saya serahkan ke
+  `dart format` + CI (ini "review debat spasi" yang dilarang jobsheet); usulan
+  fpdart `Either` → ditolak konsisten dengan keputusan minggu 7; mutex refresh
+  `ApiClient` → ditolak sekarang karena jalur itu belum punya caller (grep: nol
+  pemanggil), dicatat sebagai teknis debt saat backend sungguhan masuk.
+
+Detail prompt, output awal, dan tabel lengkap: [`docs/ai-review-vs-keputusan.md`](docs/ai-review-vs-keputusan.md).
 
 ## Refactoring Challenge & Testing
 
-Tiga tantangan refactor dari codelab, semuanya sudah saya terapkan:
+- Seluruh temuan yang saya terima sudah diterapkan sebagai commit kecil teruji —
+  tidak ada merge sebelum re-check mesin hijau.
+- Style berulang dipindah ke otomatisasi: `dart format` jadi gerbang CI, bukan
+  komentar manusia.
+- Bukti uji per perubahan perilaku: `test/auth/sign_in_test.dart` (kasus kontrak
+  dilanggar) dan `test/widget_test.dart` (smoke test lewat fake DI). Review tanpa
+  dijalankan tidak sah — keduanya saya jalankan, bukan hanya dibaca.
 
-1. **Pola sama untuk fitur kedua & ketiga** — auth dan announcements kini
-   sama bersihnya dengan push: entity + interface repository + impl +
-   use case + provider wiring. Tidak ada lagi fitur yang "kotor".
-2. **`lib/core/format.dart`** — `maskToken`, `routeFromMessage`, dan
-   `formatDate` menjadi fungsi murni yang bisa diuji tanpa widget
-   (`test/auth_push_test.dart` membuktikan `routeFromMessage` tetap teruji
-   setelah pindah rumah).
-3. **Exception mentah → Failure** — `AuthRepositoryImpl` tidak lagi
-   `throw Exception`; ia mengembalikan `ValidationFailure`/`AuthFailure`.
-   `push_errors.dart` menerjemahkan `DioException` menjadi `Failure`.
-   UI hanya menerima `failure.message` yang ramah.
+## Status paruh semester & peta issue/PR
 
-### Test use case dengan repository palsu
+**Definisi selesai minggu 8:** aplikasi berjalan identik dengan akhir Minggu 7 ✅ ·
+tiga pemeriksaan mesin hijau ✅ · ≥ 1 PR kecil di-merge via review ⏳ (menunggu
+peer review pasangan di GitHub) · README + peta issue/PR ✅ (bagian ini).
 
-Domain saya uji murni — tanpa SQLite, tanpa Dio, tanpa Firebase:
+| # | Judul | Tipe | Status |
+|---|---|---|---|
+| 12 | Smoke test menyentuh Firebase asli + SignIn null-crash (hasil AI review) | issue → PR `feat/week8-review-discipline` → `develop` | opened, menunggu review |
 
-- `test/announcements/get_announcement_test.dart` — `FakeAnnouncementRepository`:
-  sukses meneruskan data, failure tanpa melempar exception, validasi id kosong.
-- `test/auth/sign_in_test.dart` — `FakeAuthRepository` + `FakeSessionRepository`:
-  login sukses menyimpan sesi, login gagal TIDAK menyimpan sesi.
-- `test/widget_test.dart` — smoke test aplikasi utuh dengan
-  `ProviderScope(overrides: [...])` fake. Ini bukti paling nyata manfaat DI:
-  dulu mustahil menjalankan app tanpa plugin Firebase, sekarang cukup override.
+Fitur utama project: login (mock auth + sesi), daftar & detail pengumuman,
+notifikasi FCM foreground/background/terminated + deep-link. Stack: Flutter 3.47,
+Riverpod, GoRouter, Firebase Messaging, Dio, flutter_secure_storage — Clean
+Architecture feature-first (`presentation -> domain <- data`, `core/` murni Dart).
 
-```
-$ flutter test
-All tests passed!  (11 test)
-```
-
-## Laporan akhir
-
-### Struktur final
+## Cara menjalankan & hasil screenshot
 
 ```
-lib/
-├── core/            failures.dart (sealed Failure) · format.dart (fungsi murni)
-├── features/
-│   ├── auth/            domain/{entities,repositories,usecases} · data/{models,repositories,token_store,api_client} · presentation/{providers,pages}
-│   ├── announcements/   domain/{entities,repositories,usecases} · data/{models,repositories} · presentation/{providers,pages}
-│   ├── push/            domain/repositories (interface+topics) · data (Firebase/Dio/Storage terkunci di sini) · presentation/providers
-│   └── home/            presentation/pages (screen komposit)
-├── main.dart        composition root (bootstrap Firebase + Router)
-└── routes.dart      RoutePaths (pure Dart)
-```
-
-### Arah dependensi (yang saya gambar saat demo)
-
-```
-presentation ──► domain ◄── data
-```
-
-Domain tidak mengimpor apa pun dari Flutter/Dio/Firebase; presentation hanya
-menyentuh data lewat satu titik: file provider.
-
-### Stack teknologi
-
-Flutter 3.47 / Dart 3.13 · flutter_riverpod ^3.4 (state + DI) · go_router ^18 ·
-dio ^5.11 · flutter_secure_storage ^11 · firebase_core ^4 / firebase_messaging ^16 ·
-flutter_local_notifications ^22 · flutter_lints ^6.
-
-### Cara menjalankan
-
-```bash
+cd 08-week-8-mid-project-review-&-code-review/campus_notify
 flutter pub get
-flutter test              # 11 test domain murni + smoke test
-flutter analyze           # bersih
-flutter run -d <android>  # FCM butuh perangkat/emulator Android
+flutter run -d <device-id>        # di Windows: gunakan subst drive jika path mengandung &
 ```
 
-### Screenshot before/after (perangkat CPH2269, Android 11)
+Login menerima email apa pun yang mengandung `@` + password ≥ 6 karakter (mock).
+Kirim notifikasi FCM ke device untuk mencoba deep-link ke halaman pengumuman.
 
-#### Sebelum — bukti FCM minggu 6 (sebelum refactor)
+| Login (awal) | Home setelah login | Daftar pengumuman |
+|---|---|---|
+| ![login](screenshots/week8/w8-01-login.png) | ![home](screenshots/week8/w8-02-home.png) | ![pengumuman](screenshots/week8/w8-03-announcement.png) |
 
-| Notification "Test FCM" saat app tertutup | Foreground testing | Background testing | Recent tasks kosong (app terminated) | Terminated testing |
-|---|---|---|---|---|
-| ![before-1](screenshots/before/Screenshot_2026-10-04-23-40-13-21_40deb401b9ffe8e1df2f1cc5ba480b12.jpg) | ![before-2](screenshots/before/Screenshot_2026-10-05-02-49-51-02_a577b4e2495c416e6aaa7114589d0828.jpg) | ![before-3](screenshots/before/Screenshot_2026-10-05-03-11-02-05_92b64b2a7aa6eb3771ed6e18d0029815.jpg) | ![before-4](screenshots/before/Screenshot_2026-10-05-03-14-20-03_92b64b2a7aa6eb3771ed6e18d0029815.jpg) | ![before-5](screenshots/before/Screenshot_2026-10-05-03-14-32-78_92b64b2a7aa6eb3771ed6e18d0029815.jpg) |
+Verifikasi identik dengan perilaku akhir Minggu 7 — screenshot pembanding ada di
+`screenshots/before/` dan `screenshots/after/` (laporan minggu 7).
 
-#### Sesudah — hasil refactor, diambil via `flutter run` + `adb screencap`
+## Refleksi
 
-| Home (auto-login dari secure storage) | Detail pengumuman dari repository | Route guard → login | Login demo berhasil | Deeplink terminated → `/pengumuman/1` |
-|---|---|---|---|---|
-| ![after-1](screenshots/after/after-01-home.png) | ![after-2](screenshots/after/after-02-announcement.png) | ![after-3](screenshots/after/after-03-login.png) | ![after-4](screenshots/after/after-04-home-after-login.png) | ![after-5](screenshots/after/after-05-deeplink-pengumuman.png) |
-
-Bukti UI setelah refactor identik dengan sebelum refactor — padahal seluruh
-rutenya sudah lewat repository/use case: detail pengumuman (judul + tanggal +
-isi) diambil dari `AnnouncementRepository`, dan cold start terminated
-`getInitialMessage` → `navigationStream` → `/pengumuman/1` tanpa `GoRouter`
-masuk ke layer infra.
-
-Uji manual lain yang tercatat di log runtime: toggle topic
-(Unsubscribe/Subscribe bekerja lewat interface `PushRepository`), dan login
-invalid menampilkan pesan `ValidationFailure` yang ramah — bukan exception mentah.
-
-### Checklist definisi selesai (jobsheet)
-
-- [x] Snapshot commit sebelum refactor.
-- [x] 2+ fitur penuh terpisah domain/data/presentation — bukan sekadar pindah folder.
-- [x] Tiga grep sterilitas NOL hasil (`docs/GREP_VERIFICATION.md`).
-- [x] Interface di domain, implementasi di data, mapping hanya di model.
-- [x] Widget tidak menginstansiasi repository; wiring terpusat di provider.
-- [x] Aplikasi berjalan identik sebelum/sesudah (uji manual + screenshot di perangkat).
-- [x] `flutter analyze` bersih, 11 test lulus (use case sukses + failure dengan repository palsu).
-- [x] AI Challenge terdokumentasi (`docs/AI_CHALLENGE.md`): prompt, usulan-vs-keputusan, trade-off, refleksi.
+1. **LGTM buta vs approve bertanggung jawab.** Approve berarti saya menyatakan
+   kode sudah saya jalankan dan saya siap ikut menanggung bugnya; risikonya satu
+   approve malas bisa meloloskan crash yang justru muncul di demo paruh kedua —
+   persis `null-check SignIn` yang lolos dari semua review saya minggu lalu karena
+   tidak ada test yang menyentuh jalur kontrak dilanggar.
+2. **Request changes vs saran.** Menyentuh kebenaran (crash, error path, aturan
+   bisnis) atau melanggar dependency rule → wajib *request changes*; preferensi
+   penamaan atau struktur yang tidak salah secara fungsional → cukup label *saran*.
+3. **Bagian review AI yang saya tolak.** fpdart `Either` (over-engineering untuk
+   scope), mutex `ApiClient` (jalur belum dipakai), dan format manual (pantasnya
+   mesin). Menerima mentah-mentah sama berbahayanya dengan menolak semuanya.
+4. **Satu perbaikan konkret pasca-review.** Guard `AuthFailure` di `SignIn`: dampaknya
+   presenter UI tidak mungkin lagi menerima exception mentah, dan test kontrak itu
+   kini ikut lari di CI setiap PR.

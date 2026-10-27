@@ -48,10 +48,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(height: 16),
               const Text(
                 'Selamat Datang!',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -68,7 +65,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   subtitle: const Text('Lihat pengumuman #1'),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    context.go(RoutePaths.pengumumanDetail.replaceFirst(':id', '1'));
+                    context.go(
+                      RoutePaths.pengumumanDetail.replaceFirst(':id', '1'),
+                    );
                   },
                 ),
               ),
@@ -90,8 +89,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   });
 
                   if (value) {
-                    await pushRepository.subscribeTopic(
-                        PushTopics.kampus);
+                    await pushRepository.subscribeTopic(PushTopics.kampus);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -100,12 +98,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                       );
                     }
                   } else {
-                    await pushRepository.unsubscribeTopic(
-                        PushTopics.kampus);
+                    await pushRepository.unsubscribeTopic(PushTopics.kampus);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Berhasil unsubscribe pengumuman-kampus'),
+                          content: Text(
+                            'Berhasil unsubscribe pengumuman-kampus',
+                          ),
                         ),
                       );
                     }

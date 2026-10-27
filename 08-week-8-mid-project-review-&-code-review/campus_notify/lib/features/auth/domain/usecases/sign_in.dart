@@ -24,7 +24,13 @@ class SignIn {
       return (failure: result.failure);
     }
 
-    final session = result.session!;
+    final session = result.session;
+    if (session == null) {
+      // Kontrak AuthRepository dilanggar impl (tanpa failure tanpa session):
+      // jangan crash, laporkan Failure ramah ke presentation.
+      return (failure: const AuthFailure('Login gagal, silakan coba lagi.'));
+    }
+
     await _sessionRepository.save(
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,

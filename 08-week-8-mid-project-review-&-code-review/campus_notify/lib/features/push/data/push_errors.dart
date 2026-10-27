@@ -24,7 +24,9 @@ Failure failureFromDio(DioException error) {
   } else if (statusCode == 405) {
     return const NetworkFailure('Endpoint belum aktif di server backend.');
   } else if (statusCode != null && statusCode >= 500) {
-    return const NetworkFailure('Terjadi masalah pada server. Coba lagi nanti.');
+    return const NetworkFailure(
+      'Terjadi masalah pada server. Coba lagi nanti.',
+    );
   }
 
   return NetworkFailure(error.message ?? 'Terjadi kesalahan tidak terduga.');

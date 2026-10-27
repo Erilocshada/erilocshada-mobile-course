@@ -12,15 +12,17 @@ class AnnouncementRepositoryImpl implements AnnouncementRepository {
     {
       'id': '1',
       'title': 'Pengumuman #1',
-      'body': 'Jadwal Ujian Tengah Semester telah diumumkan. '
+      'body':
+          'Jadwal Ujian Tengah Semester telah diumumkan. '
           'Silakan cek jadwal melalui sistem akademik.',
       'published_at': '2026-10-01T08:00:00Z',
     },
   ];
 
   @override
-  Future<({Announcement? announcement, Failure? failure})>
-  fetchAnnouncement(String id) async {
+  Future<({Announcement? announcement, Failure? failure})> fetchAnnouncement(
+    String id,
+  ) async {
     await Future.delayed(const Duration(milliseconds: 300));
 
     try {

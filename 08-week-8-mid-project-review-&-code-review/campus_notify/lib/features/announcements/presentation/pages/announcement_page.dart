@@ -7,10 +7,7 @@ import '../providers/announcement_providers.dart';
 /// Halaman HANYA membaca state — tidak ada SQL, Dio, JSON,
 /// atau parsing/formatting mentah di dalam build().
 class AnnouncementPage extends ConsumerWidget {
-  const AnnouncementPage({
-    super.key,
-    required this.id,
-  });
+  const AnnouncementPage({super.key, required this.id});
 
   final String id;
 
@@ -19,15 +16,9 @@ class AnnouncementPage extends ConsumerWidget {
     final state = ref.watch(announcementDetailProvider(id));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Detail Pengumuman',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Detail Pengumuman')),
       body: state.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -47,9 +38,8 @@ class AnnouncementPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => ref.invalidate(
-                    announcementDetailProvider(id),
-                  ),
+                  onPressed: () =>
+                      ref.invalidate(announcementDetailProvider(id)),
                   child: const Text('Coba Lagi'),
                 ),
               ],
@@ -59,8 +49,7 @@ class AnnouncementPage extends ConsumerWidget {
         data: (announcement) => Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 announcement.title,
@@ -74,20 +63,12 @@ class AnnouncementPage extends ConsumerWidget {
 
               Text(
                 'Diterbitkan: ${formatDate(announcement.publishedAt)}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
 
               const SizedBox(height: 20),
 
-              Text(
-                announcement.body,
-                style: const TextStyle(
-                  fontSize: 16,
-                ),
-              ),
+              Text(announcement.body, style: const TextStyle(fontSize: 16)),
             ],
           ),
         ),

@@ -10,8 +10,8 @@ class ApiClient {
   ApiClient({
     required AuthRepository authRepo,
     required SessionRepository sessionRepo,
-  })  : _authRepository = authRepo,
-        _sessionRepository = sessionRepo {
+  }) : _authRepository = authRepo,
+       _sessionRepository = sessionRepo {
     _dio = Dio(
       BaseOptions(
         baseUrl: 'https://example.com/api',
@@ -23,13 +23,10 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final accessToken =
-          await _sessionRepository.accessToken();
+          final accessToken = await _sessionRepository.accessToken();
 
-          if (accessToken != null &&
-              accessToken.isNotEmpty) {
-            options.headers['Authorization'] =
-            'Bearer $accessToken';
+          if (accessToken != null && accessToken.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $accessToken';
           }
 
           handler.next(options);
@@ -42,21 +39,16 @@ class ApiClient {
           }
 
           try {
-            final refreshToken =
-            await _sessionRepository.refreshToken();
+            final refreshToken = await _sessionRepository.refreshToken();
 
-            if (refreshToken == null ||
-                refreshToken.isEmpty) {
+            if (refreshToken == null || refreshToken.isEmpty) {
               await _sessionRepository.clear();
 
               handler.next(error);
               return;
             }
 
-            final result =
-            await _authRepository.refresh(
-              refreshToken,
-            );
+            final result = await _authRepository.refresh(refreshToken);
 
             final newAccessToken = result.accessToken;
             if (newAccessToken == null) {
@@ -70,15 +62,11 @@ class ApiClient {
               refreshToken: refreshToken,
             );
 
-            final requestOptions =
-                error.requestOptions;
+            final requestOptions = error.requestOptions;
 
-            requestOptions.headers['Authorization'] =
-            'Bearer $newAccessToken';
+            requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
 
-            final response = await _dio.fetch(
-              requestOptions,
-            );
+            final response = await _dio.fetch(requestOptions);
 
             handler.resolve(response);
           } catch (_) {

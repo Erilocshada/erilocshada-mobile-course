@@ -13,9 +13,7 @@ import '../../domain/usecases/sign_in.dart';
 /// ==========================================================================
 
 // Data layer: infra storage disuntikkan lewat provider, mudah diganti fake.
-final tokenStoreProvider = Provider<TokenStore>(
-  (ref) => TokenStore(),
-);
+final tokenStoreProvider = Provider<TokenStore>((ref) => TokenStore());
 
 final sessionRepositoryProvider = Provider<SessionRepository>(
   (ref) => SessionRepositoryImpl(ref.watch(tokenStoreProvider)),
@@ -34,8 +32,7 @@ final signInProvider = Provider<SignIn>(
 );
 
 // Presentation layer: state untuk UI.
-final authProvider =
-NotifierProvider<AuthNotifier, AuthState>(
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );
 
@@ -58,10 +55,8 @@ class AuthState {
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
-      isAuthenticated:
-      isAuthenticated ?? this.isAuthenticated,
-      errorMessage:
-      clearError ? null : errorMessage ?? this.errorMessage,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -77,33 +72,19 @@ class AuthNotifier extends Notifier<AuthState> {
 
     _checkSession();
 
-    return const AuthState(
-      isLoading: true,
-    );
+    return const AuthState(isLoading: true);
   }
 
   Future<void> _checkSession() async {
     final active = await _sessionRepository.hasActiveSession();
 
-    state = AuthState(
-      isLoading: false,
-      isAuthenticated: active,
-    );
+    state = AuthState(isLoading: false, isAuthenticated: active);
   }
 
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-    );
+  Future<bool> login({required String email, required String password}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
 
-    final result = await _signIn(
-      email: email,
-      password: password,
-    );
+    final result = await _signIn(email: email, password: password);
 
     if (result.failure != null) {
       // UI hanya menerima message ramah dari Failure — bukan exception mentah.
@@ -115,19 +96,13 @@ class AuthNotifier extends Notifier<AuthState> {
       return false;
     }
 
-    state = const AuthState(
-      isLoading: false,
-      isAuthenticated: true,
-    );
+    state = const AuthState(isLoading: false, isAuthenticated: true);
     return true;
   }
 
   Future<void> logout() async {
     await _sessionRepository.clear();
 
-    state = const AuthState(
-      isLoading: false,
-      isAuthenticated: false,
-    );
+    state = const AuthState(isLoading: false, isAuthenticated: false);
   }
 }
