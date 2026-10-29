@@ -90,12 +90,7 @@ class NotesPage extends ConsumerWidget {
 }
 
 class NoteTile extends StatelessWidget {
-  const NoteTile({
-    super.key,
-    required this.note,
-    this.onTap,
-    this.onDelete,
-  });
+  const NoteTile({super.key, required this.note, this.onTap, this.onDelete});
 
   final Note note;
   final VoidCallback? onTap;
@@ -113,11 +108,7 @@ class NoteTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (note.body.isNotEmpty) ...[
-            Text(
-              note.body,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(note.body, maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
           ],
           if (note.dirty)
@@ -141,11 +132,7 @@ class NoteTile extends StatelessWidget {
           else
             Row(
               children: [
-                Icon(
-                  Icons.cloud_done,
-                  size: 16,
-                  color: Colors.green,
-                ),
+                Icon(Icons.cloud_done, size: 16, color: Colors.green),
                 const SizedBox(width: 4),
                 const Text(
                   'tersinkron',

@@ -26,7 +26,8 @@ class Note {
       id: (map['id'] as num?)?.toInt(),
       title: map['title'] as String? ?? '',
       body: map['body'] as String? ?? '',
-      updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(map['updated_at'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       dirty: ((map['dirty'] as num?)?.toInt() ?? 0) == 1,
     );

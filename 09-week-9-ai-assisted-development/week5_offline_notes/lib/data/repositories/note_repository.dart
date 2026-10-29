@@ -1,13 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
+
 import '../local/db.dart';
 import '../local/note.dart';
 import '../sync.dart';
 
-final noteRepositoryProvider = Provider<NoteRepository>((ref) => NoteRepository());
+final noteRepositoryProvider = Provider<NoteRepository>(
+  (ref) => NoteRepository(),
+);
 
-final notesProvider =
-    AsyncNotifierProvider<NotesNotifier, List<Note>>(NotesNotifier.new);
+final notesProvider = AsyncNotifierProvider<NotesNotifier, List<Note>>(
+  NotesNotifier.new,
+);
 
 class NotesNotifier extends AsyncNotifier<List<Note>> {
   @override
@@ -46,7 +50,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
 
 class NoteRepository {
   NoteRepository({Future<Database> Function()? openDb})
-      : _openDb = openDb ?? openNotesDb;
+    : _openDb = openDb ?? openNotesDb;
 
   final Future<Database> Function() _openDb;
 
@@ -82,7 +86,8 @@ class NoteRepository {
   Future<int> countDirty() async {
     final db = await _openDb();
     final rows = await db.rawQuery(
-        'SELECT COUNT(*) AS c FROM notes WHERE dirty = 1');
+      'SELECT COUNT(*) AS c FROM notes WHERE dirty = 1',
+    );
     return ((rows.first['c'] as num?)?.toInt() ?? 0);
   }
 

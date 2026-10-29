@@ -5,10 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../data/repositories/note_repository.dart';
 
 class NoteDetailPage extends ConsumerStatefulWidget {
-  const NoteDetailPage({
-    super.key,
-    required this.noteId,
-  });
+  const NoteDetailPage({super.key, required this.noteId});
 
   final int noteId;
 
@@ -36,7 +33,9 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
     if (widget.noteId > 0) {
       final notesAsync = ref.read(notesProvider);
       notesAsync.whenData((notes) {
-        final existingNote = notes.where((n) => n.id == widget.noteId).firstOrNull;
+        final existingNote = notes
+            .where((n) => n.id == widget.noteId)
+            .firstOrNull;
         if (existingNote != null) {
           _titleController.text = existingNote.title;
           _bodyController.text = existingNote.body;
@@ -51,9 +50,7 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
     final isNew = widget.noteId == 0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isNew ? 'Tambah Catatan' : 'Detail Catatan'),
-      ),
+      appBar: AppBar(title: Text(isNew ? 'Tambah Catatan' : 'Detail Catatan')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -94,7 +91,9 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
                   label: const Text('Simpan'),
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      await ref.read(notesProvider.notifier).addNote(
+                      await ref
+                          .read(notesProvider.notifier)
+                          .addNote(
                             title: _titleController.text.trim(),
                             body: _bodyController.text.trim(),
                           );

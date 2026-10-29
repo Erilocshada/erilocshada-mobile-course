@@ -12,19 +12,12 @@ void main() async {
   // Catat waktu terakhir dibuka
   await PrefsRepository().markOpenedNow();
 
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 final GoRouter _router = GoRouter(
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const NotesPage(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const NotesPage()),
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsPage(),
