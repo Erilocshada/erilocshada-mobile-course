@@ -29,6 +29,19 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     });
   }
 
+  Future<void> updateNote({
+    required int id,
+    required String title,
+    String body = '',
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(noteRepositoryProvider);
+      await repository.updateNote(id: id, title: title, body: body);
+      return repository.fetchNotes();
+    });
+  }
+
   Future<void> deleteNote(int id) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -81,6 +94,25 @@ class NoteRepository {
   Future<void> deleteNote(int id) async {
     final db = await _openDb();
     await db.delete('notes', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateNote({
+    required int id,
+    required String title,
+    String body = '',
+  }) async {
+    final db = await _openDb();
+    await db.update(
+      'notes',
+      {
+        'title': title,
+        'body': body,
+        'updated_at': DateTime.now().toIso8601String(),
+        'dirty': 1,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<int> countDirty() async {

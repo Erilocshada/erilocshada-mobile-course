@@ -33,6 +33,23 @@ class RecordingNoteRepository extends NoteRepository {
 
   @override
   Future<void> deleteNote(int id) async => notes.removeWhere((n) => n.id == id);
+
+  @override
+  Future<void> updateNote({
+    required int id,
+    required String title,
+    String body = '',
+  }) async {
+    final index = notes.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+    notes[index] = Note(
+      id: id,
+      title: title,
+      body: body,
+      updatedAt: DateTime.now(),
+      dirty: true,
+    );
+  }
 }
 
 /// Halaman penghangat yang benar-benar menunggu daftar catatan termuat,
@@ -63,24 +80,18 @@ void main() {
       final router = GoRouter(
         initialLocation: '/',
         routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, state) => const _WarmupPage(),
-          ),
+          GoRoute(path: '/', builder: (context, state) => const _WarmupPage()),
           GoRoute(
             path: '/note/:id',
-            builder: (context, state) => NoteDetailPage(
-              noteId: int.parse(state.pathParameters['id']!),
-            ),
+            builder: (context, state) =>
+                NoteDetailPage(noteId: int.parse(state.pathParameters['id']!)),
           ),
         ],
       );
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            noteRepositoryProvider.overrideWithValue(repository),
-          ],
+          overrides: [noteRepositoryProvider.overrideWithValue(repository)],
           child: MaterialApp.router(routerConfig: router),
         ),
       );
@@ -95,14 +106,18 @@ void main() {
         reason: 'halaman edit harus menampilkan isi catatan yang ada',
       );
 
-      await tester.enterText(find.byType(TextFormField).first, 'Belanja bulanan');
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'Belanja bulanan',
+      );
       await tester.tap(find.text('Simpan'));
       await tester.pumpAndSettle();
 
       expect(
         repository.notes.length,
         1,
-        reason: 'mode edit wajib memperbarui catatan id=1, bukan membuat duplikat',
+        reason:
+            'mode edit wajib memperbarui catatan id=1, bukan membuat duplikat',
       );
       expect(repository.notes.single.id, 1);
       expect(repository.notes.single.title, 'Belanja bulanan');

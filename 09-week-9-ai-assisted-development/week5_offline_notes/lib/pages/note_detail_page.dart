@@ -91,12 +91,18 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
                   label: const Text('Simpan'),
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      await ref
-                          .read(notesProvider.notifier)
-                          .addNote(
-                            title: _titleController.text.trim(),
-                            body: _bodyController.text.trim(),
-                          );
+                      final title = _titleController.text.trim();
+                      final body = _bodyController.text.trim();
+                      final notifier = ref.read(notesProvider.notifier);
+                      if (isNew) {
+                        await notifier.addNote(title: title, body: body);
+                      } else {
+                        await notifier.updateNote(
+                          id: widget.noteId,
+                          title: title,
+                          body: body,
+                        );
+                      }
                       if (context.mounted) {
                         context.pop();
                       }
