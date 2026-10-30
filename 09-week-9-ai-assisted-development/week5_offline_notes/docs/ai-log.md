@@ -175,15 +175,18 @@ Jobsheet #9 §"Refactoring Challenge", tiga-tiganya berlaku ke kode hasil AI:
 
 ## 8. Verifikasi akhir
 
+Angka di bawah adalah keadaan **setelah** ronde kedua (`docs/AI_CHALLENGE.md`) menambah
+5 test dan satu perbaikan; sebelum ronde itu gerbangnya hijau dengan 17 test.
+
 ```
 $ flutter analyze
-No issues found! (ran in 3.3s)
+No issues found! (ran in 4.4s)
 
-$ dart format --output=none --set-exit-if-changed lib test
-Formatted 38 files (0 changed)
+$ dart format --output=none --set-exit-if-changed .
+Formatted 39 files (0 changed) in 0.10 seconds
 
 $ flutter test
-00:02 +17: All tests passed!
+00:04 +22: All tests passed!
 ```
 
 ## 9. Penjelasan tanpa membuka AI
@@ -212,13 +215,15 @@ Kalau ditanya di depan kelas tanpa laptop AI, ini yang saya katakan:
 
 - [x] Prompt 5-slot + konteks tercatat, dan **netral** (tidak mengarahkan solusi)
 - [x] Output awal AI disimpan verbatim
-- [x] `flutter analyze` bersih, `flutter test` hijau (17)
-- [x] ≥1 temuan AI dibuktikan benar lalu diperbaiki — temuan #1 dan #2
-- [x] ≥1 usulan AI ditolak dengan alasan teknis tertulis — `StateProvider`, `searchNotesProvider`
+- [x] `flutter analyze` bersih, `flutter test` hijau (22 test)
+- [x] ≥1 temuan AI dibuktikan benar lalu diperbaiki — temuan #1 dan #2 (ronde generate),
+      temuan #2 reviewer (ronde challenge, lihat `docs/AI_CHALLENGE.md`)
+- [x] ≥1 usulan AI ditolak dengan alasan teknis tertulis — `StateProvider`, `searchNotesProvider`,
+      `LIKE` push-down, dan level "blocker" temuan #1 reviewer
 - [x] Keputusan per file tercatat (tabel §5)
 - [x] Satu bug/halusinasi dibuktikan lewat grep/test — tanpa ini verifikasi dianggap belum dilakukan
 - [x] Mampu menjelaskan tiap keputusan tanpa membuka AI (§9)
-- [x] Uji manual 3 query + screenshot device asli (`screenshots/`)
+- [x] Uji manual 3 query + screenshot device asli (`screenshots/week9/`)
 
 ## 11. Refleksi
 
