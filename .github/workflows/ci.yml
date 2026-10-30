@@ -8,9 +8,16 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - 08-week-8-mid-project-review-&-code-review/campus_notify
+          - 09-week-9-ai-assisted-development/week5_offline_notes
     defaults:
       run:
-        working-directory: 08-week-8-mid-project-review-&-code-review/campus_notify
+        working-directory: ${{ matrix.project }}
+    name: verify ${{ matrix.project }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
