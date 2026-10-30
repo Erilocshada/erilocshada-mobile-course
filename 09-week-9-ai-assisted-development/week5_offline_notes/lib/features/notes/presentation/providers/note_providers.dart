@@ -6,6 +6,7 @@ import '../../domain/repositories/note_repository.dart';
 import '../../domain/usecases/add_note.dart';
 import '../../domain/usecases/delete_note.dart';
 import '../../domain/usecases/get_notes.dart';
+import '../../domain/usecases/search_notes.dart';
 import '../../domain/usecases/sync_notes.dart';
 import '../../domain/usecases/update_note.dart';
 
@@ -95,3 +96,34 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     if (result.failure != null) throw Exception(result.failure!.message);
   });
 }
+
+/// Judul aktif yang sedang diketik pengguna di halaman daftar catatan.
+///
+/// AI mengusulkan `StateProvider<String>`. Ditolak: di Riverpod 3 kelas itu
+/// hanya terekspos dari `package:flutter_riverpod/legacy.dart`, bukan dari
+/// import utama yang dipakai proyek ini. `NotifierProvider` adalah padanan
+/// non-legacy dan tetap murni state UI.
+class NoteSearchQuery extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void setQuery(String value) => state = value;
+}
+
+final noteSearchQueryProvider = NotifierProvider<NoteSearchQuery, String>(
+  NoteSearchQuery.new,
+);
+
+/// Daftar catatan terfilter judul — turunan [notesProvider] + query.
+/// Penyaringan bersifat sinkron lewat [whenData], tanpa menambah jalur mutasi
+/// baru pada NotesNotifier.
+///
+/// Usulan AI `searchNotesProvider = Provider<SearchNotes>(...)` saya tolak:
+/// [SearchNotes] murni dan tanpa dependensi, jadi tidak ada apa pun yang bisa
+/// di-inject. Objek dibuat langsung di tempat pemakaiannya.
+final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
+  final query = ref.watch(noteSearchQueryProvider);
+  return ref
+      .watch(notesProvider)
+      .whenData((notes) => const SearchNotes()(notes, query));
+});

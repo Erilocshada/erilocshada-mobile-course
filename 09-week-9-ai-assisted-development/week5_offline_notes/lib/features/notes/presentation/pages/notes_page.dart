@@ -12,17 +12,27 @@ class NotesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notesAsync = ref.watch(notesProvider);
+    final notesAsync = ref.watch(filteredNotesProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Catatan Offline'),
         actions: const [SyncAction(), SettingsAction()],
       ),
-      body: notesAsync.when(
-        data: (notes) => NotesList(notes: notes),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => LoadError(message: '$err'),
+      body: Column(
+        children: [
+          const NoteSearchField(),
+          Expanded(
+            child: notesAsync.when(
+              data: (notes) => NotesList(
+                notes: notes,
+                query: ref.watch(noteSearchQueryProvider),
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => LoadError(message: '$err'),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(RoutePaths.note(0)),
@@ -33,17 +43,69 @@ class NotesPage extends ConsumerWidget {
   }
 }
 
+/// Kolom pencarian judul. Menyimpan teks lokal lewat controller (menjaga
+/// kursor), dan memancarkan nilainya ke [noteSearchQueryProvider] sebagai
+/// satu-satunya sumber kebenaran untuk penyaringan.
+class NoteSearchField extends ConsumerStatefulWidget {
+  const NoteSearchField({super.key});
+
+  @override
+  ConsumerState<NoteSearchField> createState() => _NoteSearchFieldState();
+}
+
+class _NoteSearchFieldState extends ConsumerState<NoteSearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = ref.watch(noteSearchQueryProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: TextField(
+        key: const Key('noteSearchField'),
+        controller: _controller,
+        decoration: InputDecoration(
+          hintText: 'Cari judul catatan...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: query.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _controller.clear();
+                    ref.read(noteSearchQueryProvider.notifier).setQuery('');
+                  },
+                ),
+        ),
+        onChanged: (value) =>
+            ref.read(noteSearchQueryProvider.notifier).setQuery(value),
+      ),
+    );
+  }
+}
+
 class NotesList extends ConsumerWidget {
-  const NotesList({super.key, required this.notes});
+  const NotesList({super.key, required this.notes, this.query = ''});
 
   final List<Note> notes;
+  final String query;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (notes.isEmpty) {
-      return const Center(
+      final noResults = query.trim().isNotEmpty;
+      return Center(
         child: Text(
-          'Belum ada catatan.\nTekan + untuk menambah catatan.',
+          noResults
+              ? 'Tidak ada catatan yang cocok dengan "$query".'
+              : 'Belum ada catatan.\nTekan + untuk menambah catatan.',
           textAlign: TextAlign.center,
         ),
       );
