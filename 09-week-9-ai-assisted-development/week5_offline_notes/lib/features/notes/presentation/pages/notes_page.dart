@@ -54,7 +54,20 @@ class NoteSearchField extends ConsumerStatefulWidget {
 }
 
 class _NoteSearchFieldState extends ConsumerState<NoteSearchField> {
-  final _controller = TextEditingController();
+  /// Diisi dari [noteSearchQueryProvider], bukan string kosong. Provider itu
+  /// ber-scope aplikasi sementara State ini ber-scope halaman: tanpa benih ini,
+  /// kembali dari halaman detail meninggalkan kolom kosong di atas daftar yang
+  /// masih terfilter (temuan reviewer #2, dibuktikan
+  /// test/features/notes/note_search_state_test.dart).
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: ref.read(noteSearchQueryProvider),
+    );
+  }
 
   @override
   void dispose() {

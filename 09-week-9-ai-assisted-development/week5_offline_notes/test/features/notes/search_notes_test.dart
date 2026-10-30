@@ -59,5 +59,21 @@ void main() {
       expect(search(accented, 'résumé'), hasLength(1));
       expect(search(accented, 'RÉSUMÉ'), hasLength(1));
     });
+
+    // BATES yang diketahui, bukan tujuan desain. Test ini dikunci sebagai
+    // dokumentasi setelah AI Verification Challenge (docs/AI_CHALLENGE.md
+    // temuan #3): toLowerCase() melakukan case folding, TIDAK menormalkan
+    // Unicode. Memperbaikinya butuh normalisasi NFC/NFD, dan slot Batas pada
+    // prompt minggu 9 melarang menambah dependensi.
+    test('bates: judul NFD tidak cocok dengan query NFC', () {
+      const nfdTitle = 'Re\u0301sume\u0301 dosen'; // e + combining acute
+      const nfcQuery = 'r\u00e9sum\u00e9'; // é precomposed, U+00E9
+      expect(nfdTitle.length, greaterThan(nfcQuery.length));
+
+      final nfd = [
+        Note(id: 11, title: nfdTitle, updatedAt: DateTime(2026, 10, 6)),
+      ];
+      expect(search(nfd, nfcQuery), isEmpty);
+    });
   });
 }
